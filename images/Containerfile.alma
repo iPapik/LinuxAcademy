@@ -1,6 +1,6 @@
 FROM quay.io/almalinuxorg/almalinux:9
 RUN dnf install -y \
-  bash coreutils findutils gawk grep sed procps-ng iproute iputils \
+  bash coreutils-single findutils gawk grep sed procps-ng iproute iputils \
   curl-minimal nano vim-minimal git rsync acl file less sudo shadow-utils \
   util-linux tar gzip unzip python3 openssh-clients which diffutils \
   && dnf clean all
