@@ -162,13 +162,17 @@
             "id": "m12-l04-p1",
             "title": "Сравнение семейств",
             "description": "Создайте файл `/workspace/m12-l04.txt` и запишите одну точную строку `manager=dnf`. Объясните себе, почему именно этот инструмент связан с изучаемым дистрибутивом.",
-            "distro": "alma",
+            "distro": "fedora",
             "setup": "",
             "hint": "printf '%s\\n' 'ключ=значение' > /workspace/имя-файла.txt",
             "checks": [
               {
                 "description": "Семейство определено правильно",
                 "script": "grep -Fxq 'manager=dnf' /workspace/m12-l04.txt"
+              },
+              {
+                "description": "Используется настоящий пакетный менеджер дистрибутива",
+                "script": "command -v dnf >/dev/null"
               }
             ]
           }
@@ -211,13 +215,17 @@
             "id": "m12-l05-p1",
             "title": "Сравнение семейств",
             "description": "Создайте файл `/workspace/m12-l05.txt` и запишите одну точную строку `manager=pacman`. Объясните себе, почему именно этот инструмент связан с изучаемым дистрибутивом.",
-            "distro": "debian",
+            "distro": "arch",
             "setup": "",
             "hint": "printf '%s\\n' 'ключ=значение' > /workspace/имя-файла.txt",
             "checks": [
               {
                 "description": "Семейство определено правильно",
                 "script": "grep -Fxq 'manager=pacman' /workspace/m12-l05.txt"
+              },
+              {
+                "description": "Используется настоящий пакетный менеджер дистрибутива",
+                "script": "command -v pacman >/dev/null"
               }
             ]
           }
@@ -260,13 +268,17 @@
             "id": "m12-l06-p1",
             "title": "Сравнение семейств",
             "description": "Создайте файл `/workspace/m12-l06.txt` и запишите одну точную строку `manager=zypper`. Объясните себе, почему именно этот инструмент связан с изучаемым дистрибутивом.",
-            "distro": "debian",
+            "distro": "opensuse",
             "setup": "",
             "hint": "printf '%s\\n' 'ключ=значение' > /workspace/имя-файла.txt",
             "checks": [
               {
                 "description": "Семейство определено правильно",
                 "script": "grep -Fxq 'manager=zypper' /workspace/m12-l06.txt"
+              },
+              {
+                "description": "Используется настоящий пакетный менеджер дистрибутива",
+                "script": "command -v zypper >/dev/null"
               }
             ]
           }
@@ -309,13 +321,17 @@
             "id": "m12-l07-p1",
             "title": "Сравнение семейств",
             "description": "Создайте файл `/workspace/m12-l07.txt` и запишите одну точную строку `manager=apk`. Объясните себе, почему именно этот инструмент связан с изучаемым дистрибутивом.",
-            "distro": "ubuntu",
+            "distro": "alpine",
             "setup": "",
             "hint": "printf '%s\\n' 'ключ=значение' > /workspace/имя-файла.txt",
             "checks": [
               {
                 "description": "Семейство определено правильно",
                 "script": "grep -Fxq 'manager=apk' /workspace/m12-l07.txt"
+              },
+              {
+                "description": "Используется настоящий пакетный менеджер дистрибутива",
+                "script": "command -v apk >/dev/null"
               }
             ]
           }
