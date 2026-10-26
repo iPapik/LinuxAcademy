@@ -14,7 +14,7 @@ MODULES = (load_extra('foundations.json') + EXISTING_MODULES
 # Longer step-by-step explanations are split into data files so the original
 # curricula and stable lesson IDs remain intact. The site works fully offline.
 DEEP_READING = {}
-for part in ('deep_reading_a.json', 'deep_reading_b.json', 'deep_reading_c.json'):
+for part in ('deep_reading_a.json', 'deep_reading_b.json', 'deep_reading_c.json', 'deep_reading_d.json'):
     with (SOURCE.parent / part).open(encoding='utf-8') as stream:
         DEEP_READING.update(json.load(stream))
 for mod in MODULES:
