@@ -24,3 +24,15 @@ jobs:
         run: python -m compileall -q app manage.py content/build_curriculum.py
       - name: Run application tests
         run: python -m pytest -q tests
+
+  build-images:
+    name: Build ${{ matrix.image }} laboratory image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu, debian, alma]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build laboratory Containerfile
+        run: docker build --pull -t linuxacademy-${{ matrix.image }}:ci -f images/Containerfile.${{ matrix.image }} images/
