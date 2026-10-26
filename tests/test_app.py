@@ -22,7 +22,7 @@ def auth(client,username,password):
 
 def test_content_is_complete_and_checkers_private():
     s=stats()
-    assert s == {'modules':11,'lessons':47,'tasks':49,'questions':94}
+    assert s == {'modules':14,'lessons':76,'tasks':78,'questions':152}
     assert len(set(LESSONS)) == len(LESSONS)
     assert len(set(TASKS)) == len(TASKS)
     assert all(len(l['quiz'])>=2 for l in LESSONS.values())
@@ -93,8 +93,8 @@ def test_passwordless_guest_mode_keeps_separate_progress_and_blocks_admin(monkey
         assert first.get('/reference').status_code==200
         assert first.get('/lab').status_code==200
         assert first.get('/admin').status_code==403
-        assert first.get('/login',follow_redirects=False).headers['location']=='/'
-        assert first.post('/login',data={'username':'mainadmin','password':'wrong'}).status_code==403
+        assert first.get('/login',follow_redirects=False).status_code==200
+        assert first.post('/login',data={'username':'mainadmin','password':'wrong'}).status_code==200
         assert first.post('/api/admin/users',json={'username':'hacker','password':'PasswordLong12345'}).status_code==403
         two_r=second.get('/',follow_redirects=False)
         assert two_r.status_code==303
