@@ -14,6 +14,7 @@
 <a class="nav-item" href="/dashboard"><span class="nav-glyph">▦</span> Панель обучения</a>
 <a class="nav-item" href="/lab"><span class="nav-glyph">⌘</span> Терминал Linux</a>
 <a class="nav-item" href="/reference"><span class="nav-glyph">▤</span> Справочник администратора</a>
+<a class="nav-item" href="/profile"><span class="nav-glyph">🏆</span> Мои достижения</a>
 {% if user.is_admin and not guest_mode %}<a class="nav-item" href="/admin"><span class="nav-glyph">♙</span> Пользователи</a>{% endif %}
 <div class="sidebar-section">ПРОГРАММА ОБУЧЕНИЯ</div>
 <div class="side-modules">
@@ -30,7 +31,7 @@
 <div class="main-column">
 <header class="topbar"><button class="mobile-menu" id="menuToggle" aria-label="Открыть меню">☰</button>
 <div class="crumb">LINUX / <strong>{% block crumb %}ОБЗОР{% endblock %}</strong></div>
-<div class="top-right">{% if user and guest_mode %}<span class="logged">● Личный учебный профиль</span>{% elif user %}<span class="logged">● {{ user.username }}</span><button id="logoutBtn" class="link-button">Выход</button>{% else %}<span class="logged">Учебный портал</span>{% endif %}</div>
+<div class="top-right">{% if user and user.is_guest %}<a class="top-link" href="/register">Регистрация</a><a class="top-link" href="/login">Войти</a>{% elif user %}<a class="top-link" href="/profile">● {{ user.username }}</a><button id="logoutBtn" class="link-button">Выйти</button>{% else %}<a class="top-link" href="/">Продолжить как гость</a><a class="top-link" href="/login">Войти</a>{% endif %}</div>
 </header>
 <main class="page">{% block body %}{% endblock %}</main>
 </div></div>
