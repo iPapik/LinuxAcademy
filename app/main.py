@@ -2,6 +2,7 @@ import asyncio
 import hmac
 import json
 import os
+import sqlite3
 import time
 from collections import defaultdict, deque
 from pathlib import Path
@@ -21,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import storage, labs
+from . import storage, labs, achievements
 from .curriculum import MODULES, LESSONS, TASKS, public_lesson, stats
 REFERENCE = (Path(__file__).resolve().parent.parent / "content" / "reference.md").read_text(encoding="utf-8")
 
@@ -38,6 +39,7 @@ ACTIVE_WS=defaultdict(int)
 SECURE_COOKIE=os.environ.get('ACADEMY_SECURE_COOKIE','1') == '1'
 GUEST_MODE=os.environ.get('ACADEMY_GUEST_MODE','0') == '1'
 GUEST_EVENTS=defaultdict(deque)
+SIGNUP_EVENTS=defaultdict(deque)
 
 
 @app.middleware('http')
@@ -107,16 +109,15 @@ async def index(request:Request):
 @app.get('/login',response_class=HTMLResponse)
 async def login_page(request:Request):
     if GUEST_MODE:
-        return RedirectResponse('/',303)
-    if user_from_request(request):
+        if user_from_request(request) and not user_from_request(request).get('is_guest'):
+            return RedirectResponse('/profile',303)
+    elif user_from_request(request):
         return RedirectResponse('/dashboard',303)
     return page(request,'login.html',error=None)
 
 
 @app.post('/login')
 async def login(request:Request):
-    if GUEST_MODE:
-        raise HTTPException(403,'Авторизация по паролю отключена')
     origin=request.headers.get('origin')
     if origin and urlparse(origin).netloc != request.headers.get('host'):
         return page(request,'login.html',error='Неверный источник запроса')
@@ -145,9 +146,9 @@ async def login(request:Request):
 
 @app.post('/logout')
 async def logout(request:Request):
-    if GUEST_MODE:
-        raise HTTPException(403,'Учебный профиль закреплён за браузером')
     user=current_user(request)
+    if user.get('is_guest'):
+        raise HTTPException(403,'Сначала зарегистрируйте учебный профиль')
     guard_csrf(request,user)
     storage.revoke_session(request.cookies.get('lab_session'))
     response=JSONResponse({'ok':True})
@@ -163,6 +164,7 @@ async def dashboard(request:Request):
     done=storage.completed(user['id'])
     total=sum(len(m['lessons']) for m in MODULES)
     return page(request,'dashboard.html',done=done,total=total,
+                awards=achievements.snapshot(user),
                 learned=sum(1 for k,_ in done if k=='lesson'))
 
 
@@ -178,9 +180,76 @@ async def lesson(request:Request,lesson_id:str):
     all_ids=list(LESSONS)
     idx=all_ids.index(lesson_id)
     return page(request,'lesson.html',lesson=obj,done=done,
+                has_read=(('read',lesson_id) in done or ('lesson',lesson_id) in done or ('quiz',lesson_id) in done),
+                quiz_passed=(('quiz',lesson_id) in done or ('lesson',lesson_id) in done),
                 previous=all_ids[idx-1] if idx else None,
                 following=all_ids[idx+1] if idx+1<len(all_ids) else None,
                 lesson_json=json.dumps(obj,ensure_ascii=False))
+
+
+
+@app.get('/register',response_class=HTMLResponse)
+async def register_page(request:Request):
+    user=user_from_request(request)
+    if not user:
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
+    if not user.get('is_guest'):
+        return RedirectResponse('/profile',303)
+    return page(request,'register.html',error=None)
+
+
+@app.post('/register')
+async def register_account(request:Request):
+    user=current_user(request)
+    if not user.get('is_guest'):
+        return RedirectResponse('/profile',303)
+    form=await request.form()
+    origin=request.headers.get('origin')
+    if origin and urlparse(origin).netloc != request.headers.get('host'):
+        raise HTTPException(403,'Некорректный источник')
+    if not hmac.compare_digest(str(form.get('csrf','')),user['csrf']):
+        raise HTTPException(403,'Некорректный CSRF-токен')
+    ip=request.headers.get('x-real-ip') or (request.client.host if request.client else 'unknown')
+    now=time.monotonic(); bucket=SIGNUP_EVENTS[ip]
+    while bucket and now-bucket[0]>3600:
+        bucket.popleft()
+    if len(bucket)>=10:
+        raise HTTPException(429,'Превышен лимит регистраций с этого адреса')
+    username=str(form.get('username','')).strip().lower()
+    password=str(form.get('password',''))
+    confirm=str(form.get('confirm',''))
+    if password!=confirm:
+        return page(request,'register.html',error='Пароли не совпадают')
+    try:
+        uid=storage.register(username,password,guest_user_id=user['id'])
+    except ValueError as exc:
+        return page(request,'register.html',error=str(exc))
+    except sqlite3.IntegrityError:
+        return page(request,'register.html',error='Это имя пользователя занято')
+    bucket.append(now)
+    token=storage.create_session(uid)
+    response=RedirectResponse('/profile',303)
+    response.set_cookie('lab_session',token,max_age=storage.SESSION_AGE,
+                        httponly=True,secure=SECURE_COOKIE,samesite='lax',path='/')
+    return response
+
+
+@app.get('/profile',response_class=HTMLResponse)
+async def profile_page(request:Request):
+    user=user_from_request(request)
+    if not user:
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
+    return page(request,'profile.html',awards=achievements.snapshot(user))
+
+
+@app.post('/api/lesson/{lesson_id}/read')
+async def mark_lesson_read(request:Request,lesson_id:str):
+    user=current_user(request)
+    guard_csrf(request,user)
+    if lesson_id not in LESSONS:
+        raise HTTPException(404,'Урок не найден')
+    storage.complete(user['id'],'read',lesson_id)
+    return {'ok':True,'lesson':lesson_id}
 
 
 @app.get('/reference',response_class=HTMLResponse)
