@@ -29,7 +29,14 @@
 <div class="check-results" id="result-{{ item.id }}" aria-live="polite"></div></div>
 {% endfor %}
 </section>
-<div class="lesson-next">{% if previous %}<a class="btn outline" href="/lesson/{{ previous }}">← Предыдущий урок</a>{% endif %}<span></span>{% if following %}<a class="btn secondary" href="/lesson/{{ following }}">Следующий урок →</a>{% else %}<a class="btn secondary" href="/dashboard">Вернуться к программе →</a>{% endif %}</div>
+<div class="lesson-next">
+{% if previous %}<a class="btn outline" href="/lesson/{{ previous }}">← Предыдущий урок</a>{% endif %}
+<span></span>
+{% if following %}
+{% if following_unlocked %}<a class="btn secondary" href="/lesson/{{ following }}" id="nextLessonLink">Следующий урок →</a>
+{% else %}<span id="nextLessonLocked" class="btn outline locked-action" data-next-lesson="{{ following }}">🔒 Следующий урок откроется после завершения текущего</span>{% endif %}
+{% else %}<a class="btn secondary" href="/dashboard">Вернуться к программе →</a>{% endif %}
+</div>
 </div><aside class="lesson-side"><div class="sticky-panel"><div class="eyebrow">ЭТАПЫ УРОКА</div>
 <a href="#theory">01 · Подробная теория</a><a href="#quiz">02 · Тест с разбором</a><a href="#tasks">03 · Практическое закрепление</a><a href="/profile">🏆 · Мои достижения</a>
 <div class="tiny-hint">Материал читается последовательно. После теории открывается тест, после сдачи теста — работа в лаборатории. Прогресс закрепляется за вашим профилем.</div>
