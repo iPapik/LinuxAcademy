@@ -107,6 +107,7 @@ git push origin main
 - `fatal: could not read Username`: для отправки изменений на GitHub нужна аутентификация; простой пароль аккаунта для HTTPS Git больше не подходит.
 - `remote: Permission to ... denied`: проверьте права на `iPapik/LinuxAcademy` и SSH-ключ/токен.
 - `fatal: not possible to fast-forward`: в репозитории появились чужие изменения; не выполняйте `--force`, сначала согласуйте их.
+- `cannot chdir to /home/<пользователь>/LinuxAcademy: Permission denied` на `[4/8]`: старый установщик запускал rootless Podman из домашнего каталога администратора, недоступного служебному пользователю. Исправление уже в `scripts/install.sh`: он переходит в `/opt/linuxacademy` перед переключением пользователя. Выполните `cd ~/LinuxAcademy && git pull --ff-only && sudo bash scripts/install.sh`. **Не меняйте** права домашнего каталога на `777` и не запускайте учебные контейнеры от root.
 - `podman info: permission denied`: проверьте `/etc/subuid`, `/etc/subgid`, службу пользователя `linuxacademy`, AppArmor; не отключайте механизмы защиты вслепую.
 - Не работает терминал: проверьте WebSocket `/ws/ubuntu`, обратный прокси nginx, журнал приложения и доверие TLS сертификату.
 
