@@ -139,14 +139,38 @@ cd "$INSTALL"
 runuser -u "$SERVICE" -- env ACADEMY_DATA_DIR="$HOME_DIR/data" \
   "$INSTALL/.venv/bin/python" -c 'from app import storage; storage.init_db()'
 
-echo '[8/8] Запуск службы и nginx'
+echo '[8/8] Перезапуск приложения и проверка страниц'
 systemctl daemon-reload
-systemctl enable --now linuxacademy.service
-systemctl enable --now nginx.service
+# enable --now does NOT restart an already active unit. This used to serve old
+# Python routes against new Jinja templates after an update (500/404 errors).
+systemctl enable linuxacademy.service nginx.service
+systemctl restart linuxacademy.service
 systemctl restart nginx.service
-systemctl --no-pager --full status linuxacademy.service | head -n 14 || true
-echo
-printf 'LinuxAcademy: https://%s/\n' "$HOST_IP"
-echo 'Сертификат самоподписанный. Для доверенного доступа установите корпоративный TLS-сертификат.'
-echo 'Проверка: curl -k https://127.0.0.1/healthz'
-echo 'Журнал: journalctl -u linuxacademy -f'
+if ! systemctl is-active --quiet linuxacademy.service; then
+  journalctl -u linuxacademy -n 60 --no-pager >&2
+  echo 'Ошибка: служба linuxacademy не запустилась.' >&2
+  exit 1
+fi
+# Verify *actual running app* and endpoints, not just systemd's state.
+healthy=0
+for attempt in $(seq 1 15); do
+  if "$INSTALL/.venv/bin/python" -c 'import urllib.request; import sys
+base="http://127.0.0.1:8086"
+for path in ["/healthz", "/profile", "/register"]:
+    response=urllib.request.urlopen(base+path, timeout=4)
+    if path=="/healthz":
+        assert response.status==200 and b"status" in response.read()
+    else:
+        assert response.status in (200, 303)
+' >/dev/null 2>&1; then healthy=1; break; fi
+  sleep 1
+done
+if [[ "$healthy" != 1 ]]; then
+  echo 'Ошибка: приложение не отвечает на /healthz, /profile или /register' >&2
+  journalctl -u linuxacademy -n 80 --no-pager >&2
+  exit 1
+fi
+nginx -t
+bash "$INSTALL/scripts/site-url.sh"
+echo 'Для повторного вывода адреса: sudo bash /opt/linuxacademy/scripts/site-url.sh'
+echo 'Сертификат при первой установке самоподписанный; замените корпоративным TLS.'
