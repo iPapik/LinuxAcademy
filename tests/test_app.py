@@ -42,6 +42,12 @@ def test_login_role_csrf_quiz_and_progress(monkeypatch):
         assert c.post('/login',data={'username':'student1','password':'wrong'},follow_redirects=False).status_code==200
         user=auth(c,'student1','AnotherTestPass1234!')
         assert c.get('/dashboard').status_code==200
+        assert c.get('/lesson/m00-l01').status_code==200
+        assert c.get('/lesson/m02-l01').status_code==403
+        # Complete earlier lessons to reach a legacy two-task lesson.
+        from app import learning_path
+        for previous in learning_path.ORDER[:learning_path.INDEX['m02-l01']]:
+            storage.complete(user['id'],'lesson',previous)
         assert c.get('/lesson/m02-l01').status_code==200
         assert c.get('/admin').status_code==403
         assert c.post('/api/lab/start',json={'distro':'ubuntu'}).status_code==403
@@ -50,11 +56,13 @@ def test_login_role_csrf_quiz_and_progress(monkeypatch):
         monkeypatch.setattr(labs,'ensure_lab',lambda uid,distro:'mock-container')
         monkeypatch.setattr(labs,'prepare_task',lambda name,task:None)
         monkeypatch.setattr(labs,'check_task',lambda name,task:[{'description':'mock','ok':True}])
-        assert c.post('/api/task/m02-l01-p1/prepare',headers=csrf).json()['ok']
-        assert c.post('/api/task/m02-l01-p1/verify',headers=csrf).json()['passed']
+        assert c.post('/api/task/m02-l01-p1/prepare',headers=csrf).status_code==403
+        assert c.post('/api/lesson/m02-l01/read',headers=csrf).json()['ok']
         q=LESSONS['m02-l01']['quiz']
         r=c.post('/api/quiz/m02-l01',headers=csrf,json={'answers':{x['id']:x['answer'] for x in q}})
         assert r.json()['passed']
+        assert c.post('/api/task/m02-l01-p1/prepare',headers=csrf).json()['ok']
+        assert c.post('/api/task/m02-l01-p1/verify',headers=csrf).json()['passed']
         assert ('lesson','m02-l01') not in storage.completed(user['id'])
         c.post('/api/task/m02-l01-p2/verify',headers=csrf)
         assert ('lesson','m02-l01') in storage.completed(user['id'])
@@ -89,7 +97,8 @@ def test_passwordless_guest_mode_keeps_separate_progress_and_blocks_admin(monkey
         one=storage.get_session(first.cookies.get('lab_session'))
         assert one and not one['is_admin'] and one['username'].startswith('guest-')
         assert first.get('/dashboard').status_code==200
-        assert first.get('/lesson/m02-l01').status_code==200
+        assert first.get('/lesson/m00-l01').status_code==200
+        assert first.get('/lesson/m02-l01').status_code==403
         assert first.get('/reference').status_code==200
         assert first.get('/lab').status_code==200
         assert first.get('/admin').status_code==403
@@ -101,13 +110,14 @@ def test_passwordless_guest_mode_keeps_separate_progress_and_blocks_admin(monkey
         two=storage.get_session(second.cookies.get('lab_session'))
         assert two['id']!=one['id']
         assert first.cookies.get('lab_session')!=second.cookies.get('lab_session')
-        quiz=LESSONS['m02-l01']['quiz']
-        result=first.post('/api/quiz/m02-l01',
+        quiz=LESSONS['m00-l01']['quiz']
+        assert first.post('/api/lesson/m00-l01/read',headers={'X-CSRF-Token':one['csrf']}).status_code==200
+        result=first.post('/api/quiz/m00-l01',
             headers={'X-CSRF-Token':one['csrf']},
             json={'answers':{q['id']:q['answer'] for q in quiz}})
         assert result.json()['passed']
-        assert ('quiz','m02-l01') in storage.completed(one['id'])
-        assert ('quiz','m02-l01') not in storage.completed(two['id'])
+        assert ('quiz','m00-l01') in storage.completed(one['id'])
+        assert ('quiz','m00-l01') not in storage.completed(two['id'])
         assert first.post('/logout',headers={'X-CSRF-Token':one['csrf']}).status_code==403
         assert first.get('/').status_code==200
 
@@ -176,6 +186,12 @@ def test_first_visit_register_route_and_extended_reading(monkeypatch):
         assert 'Регистрация' in response.text
         assert c.get('/profile').status_code == 200
         assert c.get('/dashboard').status_code == 200
+        assert c.get('/lesson/m00-l02').status_code==403
+        assert c.get('/lesson/m13-l01').status_code==403
+        visitor=storage.get_session(c.cookies.get('lab_session'))
+        from app import learning_path
+        for previous in learning_path.ORDER[:learning_path.INDEX['m13-l01']]:
+            storage.complete(visitor['id'],'lesson',previous)
         basics=c.get('/lesson/m00-l02')
         assert basics.status_code==200
         assert 'Подробный учебник' in basics.text
