@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'source/LinuxAcademy.tar.xz.base64'
+      - '.github/workflows/import-sources.yml'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +23,7 @@ jobs:
           set -euo pipefail
           base64 --decode source/LinuxAcademy.tar.xz.base64 > /tmp/LinuxAcademy.tar.xz
           echo 'e4fd4fe524dad95cd0ac5f07d5a719ae5aa839b11a252cb79b5829126ad538ca  /tmp/LinuxAcademy.tar.xz' | sha256sum -c -
-          tar -tf /tmp/LinuxAcademy.tar.xz | head -n 10
+          tar -tf /tmp/LinuxAcademy.tar.xz | sed -n '1,10p'
           tar -xJf /tmp/LinuxAcademy.tar.xz --strip-components=1
           test -f app/main.py
           test -f scripts/install.sh
