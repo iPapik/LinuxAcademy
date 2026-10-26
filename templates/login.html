@@ -10,11 +10,11 @@ linux-engineer
 <span class="t-teal">student@academy</span>:<span class="t-blue">~</span>$ echo 'Ready to learn'
 Ready to learn
 <span class="t-teal">student@academy</span>:<span class="t-blue">~</span>$ <span class="cursor-block">█</span></pre></div></div>
-<section class="login-box"><div class="eyebrow">ДОСТУП К ОБУЧЕНИЮ</div><h2>С возвращением</h2><p>Войдите в корпоративную учётную запись платформы.</p>
+<section class="login-box"><div class="eyebrow">ДОСТУП К ОБУЧЕНИЮ</div><h2>С возвращением</h2><p>Войдите, чтобы продолжить обучение с любого устройства.</p>
 {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 <form method="post" action="/login"><label>Логин<input name="username" type="text" autocomplete="username" placeholder="username" required autofocus></label>
 <label>Пароль<input name="password" type="password" autocomplete="current-password" placeholder="••••••••••••" required></label>
 <button class="btn primary full" type="submit">Войти в платформу <span>→</span></button></form>
-<div class="secure-text">◈ Доступ только для зарегистрированных сотрудников</div>
+<div class="secure-text">Нет аккаунта? <a href="/register">Зарегистрироваться</a> · <a href="/">Продолжить как гость</a></div>
 </section></div>
 {% endblock %}
