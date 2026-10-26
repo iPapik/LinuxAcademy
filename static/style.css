@@ -95,3 +95,21 @@ input:not([type=radio]):focus{border-color:#58a6ff;box-shadow:0 0 0 3px #388bfd2
 @media(max-width:700px){.onboarding-panel,.profile-head,.read-cta{flex-direction:column;align-items:stretch}.achievement-grid{grid-template-columns:1fr}.level-card{align-items:flex-start}.top-link{font-size:11px}}
 
 .read-cta[hidden]{display:none!important}
+
+/* Sequential curriculum */
+.module-card.module-locked{background:#10141b;border-color:#272d36;opacity:.74}
+.module-card.module-locked h3{color:#a6adb8}
+.module-gate{border-top:1px solid #30363d;padding-top:15px;color:#8b949e;font-size:12px}
+.module-progress{margin:10px 0 12px}
+.lesson-link-locked{cursor:not-allowed;color:#65707c}
+.lesson-link-locked .arrow{font-size:10px}
+.subnav-locked{color:#65707c;cursor:not-allowed;opacity:.85}
+.side-locked-module{display:flex;align-items:flex-start;gap:12px;padding:14px 23px;color:#7d8590;border-top:1px solid #21262d;font-size:12px;line-height:1.4;cursor:not-allowed}
+.side-progress{color:#8b949e;font-size:10px;margin-left:auto;white-space:nowrap;padding-left:8px}
+.side-details>summary{justify-content:flex-start;align-items:center}
+.locked-action{opacity:.6;cursor:not-allowed;pointer-events:none;text-align:center}
+.locked-page{max-width:770px;margin:28px auto;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px}
+.locked-page h1{font-size:36px;letter-spacing:-1.2px}
+.locked-page .lede{margin:0 0 28px}
+.lock-symbol{font-size:36px;margin-bottom:15px}
+@media(max-width:700px){.locked-page{padding:24px 18px}.lesson-next{flex-wrap:wrap;gap:10px}.lesson-next .btn{width:100%}}
