@@ -1,0 +1,5 @@
+FROM docker.io/opensuse/tumbleweed:latest
+RUN zypper --non-interactive refresh && zypper --non-interactive install --no-recommends bash coreutils findutils gawk grep sed procps iproute2 iputils curl nano vim git rsync acl file less sudo shadow tar gzip unzip python3 openssh diffutils && zypper clean -a
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]
