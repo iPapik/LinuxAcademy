@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Урок пока недоступен{% endblock %}{% block crumb %}ПРОГРАММА / ДОСТУП К УРОКУ{% endblock %}
+{% block body %}
+<a class="back-link" href="/dashboard">← К программе обучения</a>
+<div class="locked-page">
+<div class="lock-symbol" aria-hidden="true">🔒</div>
+<div class="eyebrow">ПОСЛЕДОВАТЕЛЬНОЕ ОБУЧЕНИЕ</div>
+<h1>Урок пока закрыт</h1>
+<p class="lede"><strong>{{ target.title }}</strong> откроется после завершения предыдущих уроков. Для зачёта нужно пройти теорию, сдать тест и выполнить практическое задание, если оно предусмотрено.</p>
+{% if required %}<div class="onboarding-panel"><div><div class="eyebrow">СЕЙЧАС НУЖНО ПРОЙТИ</div><h2>{{ required.title }}</h2><p>Завершите этот урок, чтобы продолжить обучение в установленном порядке.</p></div><a class="btn primary" href="/lesson/{{ required.id }}">Перейти к уроку →</a></div>{% endif %}
+<a href="/dashboard" class="btn outline">Открыть программу обучения</a>
+</div>
+{% endblock %}
