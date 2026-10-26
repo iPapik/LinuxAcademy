@@ -36,6 +36,8 @@ LAB_LOCKS=defaultdict(asyncio.Lock)
 MAX_WS_PER_USER=2
 ACTIVE_WS=defaultdict(int)
 SECURE_COOKIE=os.environ.get('ACADEMY_SECURE_COOKIE','1') == '1'
+GUEST_MODE=os.environ.get('ACADEMY_GUEST_MODE','0') == '1'
+GUEST_EVENTS=defaultdict(deque)
 
 
 @app.middleware('http')
@@ -59,7 +61,7 @@ def user_from_request(request):
 def page(request,template,**ctx):
     user=user_from_request(request)
     return templates.TemplateResponse(request,template,
-           {'user':user,'modules':MODULES,'counts':stats(),**ctx})
+           {'user':user,'guest_mode':GUEST_MODE,'modules':MODULES,'counts':stats(),**ctx})
 
 
 def current_user(request):
@@ -83,11 +85,29 @@ def payload_error(msg,status=400):
 
 @app.get('/',include_in_schema=False)
 async def index(request:Request):
-    return RedirectResponse('/dashboard' if user_from_request(request) else '/login',303)
+    if user_from_request(request):
+        return RedirectResponse('/dashboard',303)
+    if not GUEST_MODE:
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
+    ip=request.headers.get('x-real-ip') or (request.client.host if request.client else 'unknown')
+    now=time.monotonic()
+    bucket=GUEST_EVENTS[ip]
+    while bucket and now-bucket[0]>3600:
+        bucket.popleft()
+    if len(bucket)>=20:
+        raise HTTPException(429,'Слишком много новых учебных профилей с этого адреса')
+    token=storage.create_guest_session()
+    bucket.append(now)
+    response=RedirectResponse('/dashboard',303)
+    response.set_cookie('lab_session',token,max_age=storage.GUEST_SESSION_AGE,
+                        httponly=True,secure=SECURE_COOKIE,samesite='lax',path='/')
+    return response
 
 
 @app.get('/login',response_class=HTMLResponse)
 async def login_page(request:Request):
+    if GUEST_MODE:
+        return RedirectResponse('/',303)
     if user_from_request(request):
         return RedirectResponse('/dashboard',303)
     return page(request,'login.html',error=None)
@@ -95,6 +115,8 @@ async def login_page(request:Request):
 
 @app.post('/login')
 async def login(request:Request):
+    if GUEST_MODE:
+        raise HTTPException(403,'Авторизация по паролю отключена')
     origin=request.headers.get('origin')
     if origin and urlparse(origin).netloc != request.headers.get('host'):
         return page(request,'login.html',error='Неверный источник запроса')
@@ -123,6 +145,8 @@ async def login(request:Request):
 
 @app.post('/logout')
 async def logout(request:Request):
+    if GUEST_MODE:
+        raise HTTPException(403,'Учебный профиль закреплён за браузером')
     user=current_user(request)
     guard_csrf(request,user)
     storage.revoke_session(request.cookies.get('lab_session'))
@@ -135,7 +159,7 @@ async def logout(request:Request):
 async def dashboard(request:Request):
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/login',303)
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
     done=storage.completed(user['id'])
     total=sum(len(m['lessons']) for m in MODULES)
     return page(request,'dashboard.html',done=done,total=total,
@@ -146,7 +170,7 @@ async def dashboard(request:Request):
 async def lesson(request:Request,lesson_id:str):
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/login',303)
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
     if lesson_id not in LESSONS:
         raise HTTPException(404,'Урок не найден')
     obj=public_lesson(LESSONS[lesson_id])
@@ -163,7 +187,7 @@ async def lesson(request:Request,lesson_id:str):
 async def reference(request:Request):
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/login',303)
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
     return page(request,'reference.html',reference=REFERENCE)
 
 
@@ -171,7 +195,7 @@ async def reference(request:Request):
 async def lab_page(request:Request,distro:str='ubuntu'):
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/login',303)
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
     if distro not in labs.DISTROS:
         distro='ubuntu'
     return page(request,'lab.html',distros=labs.DISTROS,distro=distro)
@@ -179,9 +203,11 @@ async def lab_page(request:Request,distro:str='ubuntu'):
 
 @app.get('/admin',response_class=HTMLResponse)
 async def admin_page(request:Request):
+    if GUEST_MODE:
+        raise HTTPException(403,'Управление пользователями отключено')
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/login',303)
+        return RedirectResponse('/' if GUEST_MODE else '/login',303)
     if not user['is_admin']:
         raise HTTPException(403)
     return page(request,'admin.html',users=storage.list_users())
@@ -304,6 +330,8 @@ class UserCreate(BaseModel):
 
 @app.post('/api/admin/users')
 async def user_create(request:Request,data:UserCreate):
+    if GUEST_MODE:
+        raise HTTPException(403,'Управление пользователями отключено')
     user=current_user(request); guard_csrf(request,user)
     if not user['is_admin']:
         raise HTTPException(403)
@@ -320,6 +348,8 @@ async def user_create(request:Request,data:UserCreate):
 
 @app.post('/api/admin/users/{user_id}/password')
 async def user_password(request:Request,user_id:int,data:UserCreate):
+    if GUEST_MODE:
+        raise HTTPException(403,'Управление пользователями отключено')
     user=current_user(request); guard_csrf(request,user)
     if not user['is_admin']:
         raise HTTPException(403)
