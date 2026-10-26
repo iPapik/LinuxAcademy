@@ -165,3 +165,35 @@ def test_guest_to_registered_profile_survives_restart_and_logout(monkeypatch):
         again=storage.get_session(second.cookies.get('lab_session'))
         assert again['id']==visitor['id']
         assert second.get('/profile').status_code==200
+
+
+def test_first_visit_register_route_and_extended_reading(monkeypatch):
+    from app import main as app_main
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as c:
+        response = c.get('/register')
+        assert response.status_code == 200
+        assert 'Регистрация' in response.text
+        assert c.get('/profile').status_code == 200
+        assert c.get('/dashboard').status_code == 200
+        basics=c.get('/lesson/m00-l02')
+        assert basics.status_code==200
+        assert 'Подробный учебник' in basics.text
+        assert 'Файловая система' in basics.text
+        storage_lesson=c.get('/lesson/m13-l01')
+        assert storage_lesson.status_code==200
+        assert 'Btrfs' in storage_lesson.text
+        assert 'XFS' in storage_lesson.text
+
+
+def test_existing_database_receives_achievements_table(tmp_path,monkeypatch):
+    import sqlite3
+    monkeypatch.setattr(storage, 'DATA_DIR', tmp_path)
+    monkeypatch.setattr(storage, 'DB_PATH', tmp_path/'academy.sqlite3')
+    with storage.connect() as conn:
+        conn.execute('CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, is_admin INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)')
+        conn.execute("INSERT INTO users(username,password_hash,is_admin,created_at) VALUES('previousstudent','legacy',0,1)")
+    storage.init_db()
+    with storage.connect() as conn:
+        assert conn.execute("SELECT username FROM users WHERE username='previousstudent'").fetchone()[0]=='previousstudent'
+        assert conn.execute("SELECT name FROM sqlite_master WHERE name='achievements'").fetchone()[0]=='achievements'
