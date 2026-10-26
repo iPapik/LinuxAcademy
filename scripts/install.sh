@@ -154,14 +154,13 @@ fi
 # Verify *actual running app* and endpoints, not just systemd's state.
 healthy=0
 for attempt in $(seq 1 15); do
-  if "$INSTALL/.venv/bin/python" -c 'import urllib.request; import sys
-base="http://127.0.0.1:8086"
-for path in ["/healthz", "/profile", "/register"]:
-    response=urllib.request.urlopen(base+path, timeout=4)
-    if path=="/healthz":
-        assert response.status==200 and b"status" in response.read()
-    else:
-        assert response.status in (200, 303)
+  if "$INSTALL/.venv/bin/python" -c 'import http.client
+for path in ("/healthz", "/profile", "/register"):
+    c=http.client.HTTPConnection("127.0.0.1", 8086, timeout=4)
+    c.request("GET",path)
+    r=c.getresponse()
+    assert (r.status==200 and b"status" in r.read()) if path=="/healthz" else r.status in (200,303)
+    c.close()
 ' >/dev/null 2>&1; then healthy=1; break; fi
   sleep 1
 done
