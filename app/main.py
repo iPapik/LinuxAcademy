@@ -330,6 +330,9 @@ async def task_prepare(request:Request,task_id:str):
     task=TASKS.get(task_id)
     if not task:
         raise HTTPException(404)
+    if task['lesson_id'].startswith(('m00-','m12-','m13-')):
+        if ('quiz',task['lesson_id']) not in storage.completed(user['id']):
+            raise HTTPException(403,'Сначала сдайте тест по теории')
     async with LAB_LOCKS[user['id']]:
         try:
             name=await asyncio.to_thread(labs.ensure_lab,user['id'],task['distro'])
@@ -352,6 +355,9 @@ async def task_verify(request:Request,task_id:str):
     task=TASKS.get(task_id)
     if not task:
         raise HTTPException(404)
+    if task['lesson_id'].startswith(('m00-','m12-','m13-')):
+        if ('quiz',task['lesson_id']) not in storage.completed(user['id']):
+            raise HTTPException(403,'Сначала сдайте тест по теории')
     async with LAB_LOCKS[user['id']]:
         try:
             name=await asyncio.to_thread(labs.ensure_lab,user['id'],task['distro'])
@@ -375,6 +381,10 @@ async def submit_quiz(request:Request,lesson_id:str,data:QuizInput):
     lesson=LESSONS.get(lesson_id)
     if not lesson:
         raise HTTPException(404)
+    if lesson_id.startswith(('m00-','m12-','m13-')):
+        done=storage.completed(user['id'])
+        if ('read',lesson_id) not in done and ('quiz',lesson_id) not in done:
+            raise HTTPException(403,'Сначала изучите теорию урока')
     quiz=lesson.get('quiz',[])
     if not quiz:
         raise HTTPException(400,'В уроке нет теста')
