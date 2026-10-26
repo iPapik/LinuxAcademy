@@ -79,12 +79,16 @@ RUN_AS=(runuser -u "$SERVICE" -- env "HOME=$HOME_DIR" "XDG_RUNTIME_DIR=/run/user
 "${RUN_AS[@]}" podman info >/dev/null || {
  echo 'Rootless Podman не запустился. Проверьте /etc/subuid, /etc/subgid, loginctl и user@UID.service.' >&2; exit 1;
 }
-echo '[5/8] Сборка трёх Linux-образов (загрузка пакетов и образов нужна при первой установке)'
-for item in ubuntu debian alma; do
+echo '[5/8] Сборка семи Linux-образов (при первом запуске требуются репозитории и сеть)'
+for item in ubuntu debian alma fedora arch opensuse alpine; do
  case "$item" in
   ubuntu) tag='localhost/linuxacademy-ubuntu:24.04';;
   debian) tag='localhost/linuxacademy-debian:13';;
   alma) tag='localhost/linuxacademy-alma:9';;
+  fedora) tag='localhost/linuxacademy-fedora:43';;
+  arch) tag='localhost/linuxacademy-arch:latest';;
+  opensuse) tag='localhost/linuxacademy-opensuse:latest';;
+  alpine) tag='localhost/linuxacademy-alpine:3.24';;
  esac
  echo "      $item → $tag"
  "${RUN_AS[@]}" podman build --pull=missing -t "$tag" \
