@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import storage, labs, achievements
+from . import storage, labs, achievements, learning_path
 from .curriculum import MODULES, LESSONS, TASKS, public_lesson, stats
 REFERENCE = (Path(__file__).resolve().parent.parent / "content" / "reference.md").read_text(encoding="utf-8")
 
@@ -62,8 +62,29 @@ def user_from_request(request):
 
 def page(request,template,**ctx):
     user=user_from_request(request)
+    done=storage.completed(user['id']) if user else set()
     return templates.TemplateResponse(request,template,
-           {'user':user,'guest_mode':GUEST_MODE,'modules':MODULES,'counts':stats(),**ctx})
+           {'user':user,'guest_mode':GUEST_MODE,'modules':MODULES,'counts':stats(),
+            'unlocked_lessons':learning_path.unlocked_lessons(done),
+            'module_progress':learning_path.module_state(done),
+            'next_lesson_id':learning_path.next_lesson(done),
+            'progress_done':done, **ctx})
+
+
+def require_open_lesson(lesson_id, done):
+    if not learning_path.is_unlocked(lesson_id, done):
+        required=learning_path.prerequisite(lesson_id, done)
+        title=LESSONS[required]['title'] if required else 'предыдущий урок'
+        raise HTTPException(
+            403, f'Урок заблокирован. Сначала завершите предыдущий урок: {title}')
+
+
+def locked_lesson_page(request, lesson_id, done):
+    required=learning_path.prerequisite(lesson_id, done)
+    response=page(request,'locked.html',target=LESSONS[lesson_id],
+                  required=LESSONS[required] if required else None)
+    response.status_code=403
+    return response
 
 
 def current_user(request):
@@ -165,6 +186,7 @@ async def dashboard(request:Request):
     done=storage.completed(user['id'])
     total=sum(len(m['lessons']) for m in MODULES)
     return page(request,'dashboard.html',done=done,total=total,
+                current_lesson=LESSONS[learning_path.next_lesson(done)] if learning_path.next_lesson(done) else None,
                 awards=achievements.snapshot(user),
                 learned=sum(1 for k,_ in done if k=='lesson'))
 
@@ -176,8 +198,10 @@ async def lesson(request:Request,lesson_id:str):
         return RedirectResponse('/' if GUEST_MODE else '/login',303)
     if lesson_id not in LESSONS:
         raise HTTPException(404,'Урок не найден')
-    obj=public_lesson(LESSONS[lesson_id])
     done=storage.completed(user['id'])
+    if not learning_path.is_unlocked(lesson_id, done):
+        return locked_lesson_page(request,lesson_id,done)
+    obj=public_lesson(LESSONS[lesson_id])
     all_ids=list(LESSONS)
     idx=all_ids.index(lesson_id)
     return page(request,'lesson.html',lesson=obj,done=done,
@@ -185,6 +209,7 @@ async def lesson(request:Request,lesson_id:str):
                 quiz_passed=(('quiz',lesson_id) in done or ('lesson',lesson_id) in done),
                 previous=all_ids[idx-1] if idx else None,
                 following=all_ids[idx+1] if idx+1<len(all_ids) else None,
+                following_unlocked=(idx+1<len(all_ids) and learning_path.is_unlocked(all_ids[idx+1],done)),
                 lesson_json=json.dumps(obj,ensure_ascii=False))
 
 
@@ -249,6 +274,7 @@ async def mark_lesson_read(request:Request,lesson_id:str):
     guard_csrf(request,user)
     if lesson_id not in LESSONS:
         raise HTTPException(404,'Урок не найден')
+    require_open_lesson(lesson_id,storage.completed(user['id']))
     storage.complete(user['id'],'read',lesson_id)
     return {'ok':True,'lesson':lesson_id}
 
@@ -331,9 +357,10 @@ async def task_prepare(request:Request,task_id:str):
     task=TASKS.get(task_id)
     if not task:
         raise HTTPException(404)
-    if task['lesson_id'].startswith(('m00-','m12-','m13-')):
-        if ('quiz',task['lesson_id']) not in storage.completed(user['id']):
-            raise HTTPException(403,'Сначала сдайте тест по теории')
+    task_done=storage.completed(user['id'])
+    require_open_lesson(task['lesson_id'],task_done)
+    if ('quiz',task['lesson_id']) not in task_done and ('lesson',task['lesson_id']) not in task_done:
+        raise HTTPException(403,'Сначала сдайте тест по теории')
     async with LAB_LOCKS[user['id']]:
         try:
             name=await asyncio.to_thread(labs.ensure_lab,user['id'],task['distro'])
@@ -356,9 +383,10 @@ async def task_verify(request:Request,task_id:str):
     task=TASKS.get(task_id)
     if not task:
         raise HTTPException(404)
-    if task['lesson_id'].startswith(('m00-','m12-','m13-')):
-        if ('quiz',task['lesson_id']) not in storage.completed(user['id']):
-            raise HTTPException(403,'Сначала сдайте тест по теории')
+    task_done=storage.completed(user['id'])
+    require_open_lesson(task['lesson_id'],task_done)
+    if ('quiz',task['lesson_id']) not in task_done and ('lesson',task['lesson_id']) not in task_done:
+        raise HTTPException(403,'Сначала сдайте тест по теории')
     async with LAB_LOCKS[user['id']]:
         try:
             name=await asyncio.to_thread(labs.ensure_lab,user['id'],task['distro'])
@@ -369,7 +397,8 @@ async def task_verify(request:Request,task_id:str):
     if passed:
         storage.complete(user['id'],'task',task_id)
         update_lesson_completion(user['id'],task['lesson_id'])
-    return {'ok':True,'passed':passed,'checks':result}
+    return {'ok':True,'passed':passed,'checks':result,
+            'lesson_completed':('lesson',task['lesson_id']) in storage.completed(user['id'])}
 
 
 class QuizInput(BaseModel):
@@ -382,10 +411,10 @@ async def submit_quiz(request:Request,lesson_id:str,data:QuizInput):
     lesson=LESSONS.get(lesson_id)
     if not lesson:
         raise HTTPException(404)
-    if lesson_id.startswith(('m00-','m12-','m13-')):
-        done=storage.completed(user['id'])
-        if ('read',lesson_id) not in done and ('quiz',lesson_id) not in done:
-            raise HTTPException(403,'Сначала изучите теорию урока')
+    done=storage.completed(user['id'])
+    require_open_lesson(lesson_id,done)
+    if ('read',lesson_id) not in done and ('quiz',lesson_id) not in done and ('lesson',lesson_id) not in done:
+        raise HTTPException(403,'Сначала изучите теорию урока')
     quiz=lesson.get('quiz',[])
     if not quiz:
         raise HTTPException(400,'В уроке нет теста')
@@ -400,7 +429,8 @@ async def submit_quiz(request:Request,lesson_id:str,data:QuizInput):
     if passed:
         storage.complete(user['id'],'quiz',lesson_id)
         update_lesson_completion(user['id'],lesson_id)
-    return {'ok':True,'score':n,'total':len(quiz),'passed':passed,'checks':checks}
+    return {'ok':True,'score':n,'total':len(quiz),'passed':passed,'checks':checks,
+            'lesson_completed':('lesson',lesson_id) in storage.completed(user['id'])}
 
 
 class UserCreate(BaseModel):
