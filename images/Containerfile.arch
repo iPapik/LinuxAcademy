@@ -1,0 +1,5 @@
+FROM docker.io/library/archlinux:base
+RUN pacman -Syu --noconfirm --needed bash coreutils findutils gawk grep sed procps-ng iproute2 iputils curl nano vim git rsync acl file less sudo shadow tar gzip unzip python openssh diffutils && pacman -Scc --noconfirm
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]
