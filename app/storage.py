@@ -73,6 +73,23 @@ def add_user(username, password, admin=False):
                   (username, hash_password(password), int(admin), int(time.time())))
 
 
+
+def create_guest_session():
+    """Create an unprivileged, passwordless browser identity; returns a bearer token.
+    Password login is deliberately impossible for these synthetic accounts.
+    """
+    username = 'guest-' + secrets.token_hex(12)
+    with connect() as c:
+        cursor = c.execute(
+            'INSERT INTO users(username,password_hash,is_admin,created_at) VALUES(?,?,0,?)',
+            (username, '!disabled-guest-login', int(time.time())))
+        user_id = cursor.lastrowid
+    return create_session(user_id, age=GUEST_SESSION_AGE)
+
+
+GUEST_SESSION_AGE = 365 * 24 * 3600
+
+
 def count_users():
     with connect() as c:
         return c.execute('SELECT count(*) FROM users').fetchone()[0]
@@ -86,14 +103,14 @@ def authenticate(username, password):
     return None
 
 
-def create_session(user_id):
+def create_session(user_id, age=SESSION_AGE):
     token = secrets.token_urlsafe(40)
     csrf = secrets.token_urlsafe(32)
     now = int(time.time())
     with connect() as c:
         c.execute('DELETE FROM sessions WHERE expires<?', (now,))
         c.execute('INSERT INTO sessions VALUES (?,?,?,?)',
-                  (hashlib.sha256(token.encode()).hexdigest(), user_id, csrf, now + SESSION_AGE))
+                  (hashlib.sha256(token.encode()).hexdigest(), user_id, csrf, now + age))
     return token
 
 
