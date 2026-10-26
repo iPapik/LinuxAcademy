@@ -19,10 +19,23 @@
 <div class="sidebar-section">ПРОГРАММА ОБУЧЕНИЯ</div>
 <div class="side-modules">
 {% for mod in modules %}
+{% set state = module_progress[mod.id] %}
+{% if state.unlocked %}
 <details class="side-details" {% if lesson is defined and lesson.id in (mod.lessons|map(attribute='id')|list) %}open{% endif %}>
-<summary><span class="module-index">{{ '%02d'|format(loop.index) }}</span>{{ mod.title }}</summary>
-{% for item in mod.lessons %}<a class="subnav {% if lesson is defined and lesson.id == item.id %}current{% endif %}" href="/lesson/{{ item.id }}">{{ item.title }}</a>{% endfor %}
+<summary><span class="module-index">{{ '%02d'|format(loop.index) }}</span>{{ mod.title }} <span class="side-progress">{{ state.done_count }}/{{ state.total }}</span></summary>
+{% for item in mod.lessons %}
+{% if item.id in unlocked_lessons %}
+<a class="subnav {% if lesson is defined and lesson.id == item.id %}current{% endif %}" href="/lesson/{{ item.id }}">{{ '✓ ' if ('lesson',item.id) in progress_done else '○ ' }}{{ item.title }}</a>
+{% else %}
+<span class="subnav subnav-locked" title="Сначала завершите предыдущий урок">🔒 {{ item.title }}</span>
+{% endif %}
+{% endfor %}
 </details>
+{% else %}
+<div class="side-locked-module" title="Раздел откроется после завершения предыдущего">
+<span class="module-index">{{ '%02d'|format(loop.index) }}</span><span>🔒 {{ mod.title }}</span>
+</div>
+{% endif %}
 {% endfor %}
 </div>
 {% endif %}
