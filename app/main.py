@@ -311,7 +311,7 @@ async def admin_page(request:Request):
 
 @app.get('/healthz')
 async def health():
-    return {'status':'ok', 'release':'1.2.0', 'curriculum':stats()}
+    return {'status':'ok', 'release':'1.3.0', 'curriculum':stats()}
 
 
 @app.get('/robots.txt')
