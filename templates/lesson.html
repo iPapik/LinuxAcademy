@@ -23,7 +23,7 @@
 {% for item in lesson.tasks %}
 <div class="task-card" id="{{ item.id }}"><div class="task-header"><div><span class="label-index">ЗАДАНИЕ {{ '%02d'|format(loop.index) }}</span><h3>{{ item.title }}</h3></div>
 <span class="status-chip {% if ('task',item.id) in done %}done{% endif %}" data-task-status="{{ item.id }}">{% if ('task',item.id) in done %}✓ Пройдено{% else %}Не проверено{% endif %}</span></div>
-<div class="task-description">{{ item.description|md|safe }}</div><div class="task-meta">Среда: <strong>{{ {'ubuntu':'Ubuntu 24.04','debian':'Debian 13','alma':'AlmaLinux 9'}[item.distro] }}</strong></div>
+<div class="task-description">{{ item.description|md|safe }}</div><div class="task-meta">Среда: <strong>{{ {'ubuntu':'Ubuntu 24.04','debian':'Debian 13','alma':'AlmaLinux 9','fedora':'Fedora 43','arch':'Arch Linux','opensuse':'openSUSE Tumbleweed','alpine':'Alpine 3.24'}[item.distro] }}</strong></div>
 <div class="task-actions"><button class="btn secondary" data-prepare="{{ item.id }}">Подготовить задание</button><a class="btn outline" href="/lab?distro={{ item.distro }}" target="_blank" rel="noopener">Открыть терминал ↗</a><button class="btn primary" data-verify="{{ item.id }}">Проверить результат</button></div>
 {% if item.hint %}<details class="hint"><summary>Подсказка</summary><p>{{ item.hint }}</p></details>{% endif %}
 <div class="check-results" id="result-{{ item.id }}" aria-live="polite"></div></div>
