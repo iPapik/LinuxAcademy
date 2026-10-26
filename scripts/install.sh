@@ -41,6 +41,7 @@ chown -R "$SERVICE:$SERVICE" "$INSTALL"
 cat >/etc/linuxacademy.env <<ENV
 ACADEMY_DATA_DIR=${HOME_DIR}/data
 ACADEMY_SECURE_COOKIE=1
+ACADEMY_GUEST_MODE=1
 HOME=${HOME_DIR}
 XDG_RUNTIME_DIR=/run/user/${UID_LAB}
 ENV
@@ -129,18 +130,10 @@ ln -sfn /etc/nginx/sites-available/linuxacademy /etc/nginx/sites-enabled/linuxac
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 
-echo '[7/8] Создание первого администратора'
+echo '[7/8] Инициализация учебной платформы без администратора'
 cd "$INSTALL"
-if [[ ! -f "$HOME_DIR/data/academy.sqlite3" ]] || \
-   [[ "$(runuser -u "$SERVICE" -- env ACADEMY_DATA_DIR="$HOME_DIR/data" "$INSTALL/.venv/bin/python" manage.py stats | grep -o 'Пользователей: [0-9]*' | awk '{print $2}')" == 0 ]]; then
- echo 'Введите логин администратора (латинские строчные буквы); по умолчанию admin'
- read -r -p 'Логин: ' ADMIN_LOGIN
- ADMIN_LOGIN=${ADMIN_LOGIN:-admin}
- runuser -u "$SERVICE" -- env ACADEMY_DATA_DIR="$HOME_DIR/data" \
-    "$INSTALL/.venv/bin/python" manage.py create-admin "$ADMIN_LOGIN"
-else
- echo 'Пользователи уже существуют, администратор не создаётся повторно.'
-fi
+runuser -u "$SERVICE" -- env ACADEMY_DATA_DIR="$HOME_DIR/data" \
+  "$INSTALL/.venv/bin/python" -c 'from app import storage; storage.init_db()'
 
 echo '[8/8] Запуск службы и nginx'
 systemctl daemon-reload
