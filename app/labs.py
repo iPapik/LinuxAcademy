@@ -13,6 +13,10 @@ DISTROS = {
  'ubuntu': {'name':'Ubuntu 24.04 LTS', 'image':'localhost/linuxacademy-ubuntu:24.04', 'shell':'/bin/bash'},
  'debian': {'name':'Debian 13 (Trixie)', 'image':'localhost/linuxacademy-debian:13', 'shell':'/bin/bash'},
  'alma': {'name':'AlmaLinux 9', 'image':'localhost/linuxacademy-alma:9', 'shell':'/bin/bash'},
+ 'fedora': {'name':'Fedora 43', 'image':'localhost/linuxacademy-fedora:43', 'shell':'/bin/bash'},
+ 'arch': {'name':'Arch Linux (rolling)', 'image':'localhost/linuxacademy-arch:latest', 'shell':'/bin/bash'},
+ 'opensuse': {'name':'openSUSE Tumbleweed', 'image':'localhost/linuxacademy-opensuse:latest', 'shell':'/bin/bash'},
+ 'alpine': {'name':'Alpine Linux 3.24', 'image':'localhost/linuxacademy-alpine:3.24', 'shell':'/bin/bash'},
 }
 
 
