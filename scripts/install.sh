@@ -69,6 +69,11 @@ WantedBy=multi-user.target
 EOF2
 
 echo '[4/8] Проверка rootless Podman'
+# runuser inherits the calling shell's working directory. If installation was
+# launched from /home/<admin>/LinuxAcademy (often mode 0700), linuxacademy
+# cannot chdir there and Podman fails before reading its own configuration.
+# The deployed directory is owned by the dedicated service account.
+cd "$INSTALL"
 RUN_AS=(runuser -u "$SERVICE" -- env "HOME=$HOME_DIR" "XDG_RUNTIME_DIR=/run/user/${UID_LAB}")
 "${RUN_AS[@]}" podman info >/dev/null || {
  echo 'Rootless Podman не запустился. Проверьте /etc/subuid, /etc/subgid, loginctl и user@UID.service.' >&2; exit 1;
