@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [ubuntu, debian, alma]
+        image: [ubuntu, debian, alma, fedora, arch, opensuse, alpine]
     steps:
       - uses: actions/checkout@v4
       - name: Build laboratory Containerfile
