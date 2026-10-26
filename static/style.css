@@ -93,3 +93,5 @@ input:not([type=radio]):focus{border-color:#58a6ff;box-shadow:0 0 0 3px #388bfd2
 .lesson-stage .section-head{margin-top:20px}
 @media(max-width:1050px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.onboarding-panel,.profile-head,.read-cta{flex-direction:column;align-items:stretch}.achievement-grid{grid-template-columns:1fr}.level-card{align-items:flex-start}.top-link{font-size:11px}}
+
+.read-cta[hidden]{display:none!important}
