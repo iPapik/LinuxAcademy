@@ -100,7 +100,8 @@ async def index(request:Request):
         raise HTTPException(429,'Слишком много новых учебных профилей с этого адреса')
     token=storage.create_guest_session()
     bucket.append(now)
-    response=RedirectResponse('/dashboard',303)
+    destination='/register' if request.query_params.get('next')=='register' else '/dashboard'
+    response=RedirectResponse(destination,303)
     response.set_cookie('lab_session',token,max_age=storage.GUEST_SESSION_AGE,
                         httponly=True,secure=SECURE_COOKIE,samesite='lax',path='/')
     return response
@@ -192,7 +193,7 @@ async def lesson(request:Request,lesson_id:str):
 async def register_page(request:Request):
     user=user_from_request(request)
     if not user:
-        return RedirectResponse('/' if GUEST_MODE else '/login',303)
+        return RedirectResponse('/?next=register' if GUEST_MODE else '/login',303)
     if not user.get('is_guest'):
         return RedirectResponse('/profile',303)
     return page(request,'register.html',error=None)
