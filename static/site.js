@@ -34,6 +34,19 @@ if(markRead)markRead.onclick=async()=>{
 const search=document.getElementById('courseSearch');
 if(search)search.oninput=()=>{const query=search.value.trim().toLowerCase();document.querySelectorAll('.module-card').forEach(card=>card.hidden=!card.dataset.search.includes(query))};
 
+function unlockNextLesson(){
+ const locked=document.getElementById('nextLessonLocked');
+ if(!locked)return;
+ const id=locked.dataset.nextLesson;
+ if(!/^m[0-9]{2}-l[0-9]{2}$/.test(id))return;
+ const link=document.createElement('a');
+ link.href='/lesson/'+id;
+ link.className='btn secondary';
+ link.textContent='Следующий урок →';
+ locked.replaceWith(link);
+ document.getElementById('stepPractice')?.classList.add('complete');
+ toast('Урок завершён. Следующий урок открыт!');
+}
 for(const button of document.querySelectorAll('[data-prepare]')){
  button.onclick=async()=>{
   button.disabled=true;
@@ -49,7 +62,7 @@ for(const button of document.querySelectorAll('[data-verify]')){
    const result=await api(`/api/task/${id}/verify`);
    const target=document.getElementById(`result-${id}`);target.replaceChildren();
    for(const test of result.checks){const p=document.createElement('div');p.className='check-result '+(test.ok?'pass':'fail');p.textContent=test.description;target.appendChild(p)}
-   if(result.passed){const badge=document.querySelector(`[data-task-status="${id}"]`);badge.className='status-chip done';badge.textContent='✓ Пройдено';toast('Отлично. Все проверки пройдены!')}
+   if(result.passed){const badge=document.querySelector(`[data-task-status="${id}"]`);badge.className='status-chip done';badge.textContent='✓ Пройдено';toast('Отлично. Все проверки пройдены!');if(result.lesson_completed)unlockNextLesson()}
    else toast('Не все критерии выполнены. Посмотрите результаты проверки.',true);
   }catch(err){toast(err.message,true)}finally{button.disabled=false}
  };
@@ -64,6 +77,7 @@ if(submitQuiz){
     for(const item of res.checks){const feedback=document.querySelector(`[data-q-feedback="${item.id}"]`);feedback.className='q-feedback '+(item.passed?'':'fail');feedback.textContent=(item.passed?'✓ Правильно. ':'× Неверно. ')+item.explanation}
     const result=document.getElementById('quizResult');result.className='quiz-result '+(res.passed?'':'fail');result.textContent=`Результат: ${res.score} из ${res.total}. ${res.passed?'Тест сдан.':'Для зачёта необходимо набрать не менее 70%. Можно повторить.'}`;
     if(res.passed){
+      if(res.lesson_completed)unlockNextLesson();
       const labs=document.getElementById('tasks');
       if(labs){labs.hidden=false;document.getElementById('stepQuiz')?.classList.add('complete');document.getElementById('stepPractice')?.classList.add('current');}
       if(labs)labs.scrollIntoView({behavior:'smooth',block:'start'});
