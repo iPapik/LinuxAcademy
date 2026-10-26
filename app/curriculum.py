@@ -9,7 +9,8 @@ def load_extra(filename):
     with (SOURCE.parent / filename).open(encoding='utf-8') as stream:
         return json.load(stream)
 MODULES = (load_extra('foundations.json') + EXISTING_MODULES
-           + load_extra('distros.json'))
+           + load_extra('distros.json')
+           + load_extra('storage_foundations.json'))
 LESSONS = {l['id']:l for m in MODULES for l in m['lessons']}
 TASKS = {t['id']: dict(t, lesson_id=l['id']) for l in LESSONS.values() for t in l.get('tasks',[])}
 
