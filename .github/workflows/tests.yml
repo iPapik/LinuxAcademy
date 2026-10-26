@@ -20,6 +20,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest httpx
+      - name: Check installer and URL helper syntax
+        run: bash -n scripts/install.sh scripts/site-url.sh scripts/backup.sh
+      - name: Verify installer restarts the live service
+        run: |
+          grep -Fq 'systemctl restart linuxacademy.service' scripts/install.sh
+          grep -Fq '"$INSTALL/scripts/site-url.sh"' scripts/install.sh || grep -Fq 'bash "$INSTALL/scripts/site-url.sh"' scripts/install.sh
       - name: Compile Python files
         run: python -m compileall -q app manage.py content/build_curriculum.py
       - name: Run application tests
