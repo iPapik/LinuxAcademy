@@ -3,7 +3,10 @@
 {% block body %}
 <div class="eyebrow">ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА / LINUX</div><div class="hero-row"><div><h1>Твоя дорога<br>в <em>Linux.</em></h1><p class="lede">Изучай систему изнутри, выполняй команды и проходи реальные проверки. Все результаты сохраняются.</p></div>
 <div class="hero-symbol">$_</div></div>
-<div class="onboarding-panel"><div><div class="eyebrow">НАЧНИТЕ С ОСНОВ</div><h2>Первые шаги в Linux</h2><p>Разберитесь, что такое файл, каталог и файловая система. Затем проверьте знания и повторите действия в настоящем терминале.</p></div><a class="btn primary" href="/lesson/m00-l01">Начать с нуля →</a></div>
+<div class="onboarding-panel"><div><div class="eyebrow">ВАШ СЛЕДУЮЩИЙ УРОК</div>
+{% if current_lesson %}<h2>{{ current_lesson.title }}</h2><p>Чтобы открыть следующие уроки и главы, завершите текущий урок: теория, контрольный тест и практика.</p>
+{% else %}<h2>Вся программа пройдена</h2><p>Все доступные уроки завершены. Результаты сохраняются в личном кабинете.</p>{% endif %}
+</div>{% if current_lesson %}<a class="btn primary" href="/lesson/{{ current_lesson.id }}">Продолжить обучение →</a>{% else %}<a class="btn primary" href="/profile">Мои достижения →</a>{% endif %}</div>
 <div class="onboarding-panel secondary-panel"><div><div class="eyebrow">ВАШ ПРОГРЕСС</div><h2>{{ awards.earned }} из {{ awards.total }} достижений · уровень {{ awards.level }}</h2><p>{{ awards.xp }} XP за прочитанные темы, сданные тесты и задания.</p></div><a class="btn outline" href="/profile">Мои достижения →</a></div>
 <div class="stats-grid"><div class="stat-tile"><div class="stat-caption">ПРОГРЕСС</div><strong>{{ learned }} <small>/ {{ total }}</small></strong><div class="progress"><span style="width: {{ (learned / total * 100)|round if total else 0 }}%"></span></div><div class="minor">пройдено уроков</div></div>
 <div class="stat-tile"><div class="stat-caption">УЧЕБНАЯ ПРОГРАММА</div><strong>{{ counts.lessons }}</strong><div class="minor">структурированных уроков</div></div>
@@ -11,8 +14,24 @@
 <div class="stat-tile"><div class="stat-caption">ТЕСТИРОВАНИЕ</div><strong>{{ counts.questions }}</strong><div class="minor">вопросов с разбором</div></div></div>
 <div class="section-head"><div><div class="eyebrow">УЧЕБНЫЕ ТРЕКИ</div><h2>Программа обучения</h2></div><input type="search" id="courseSearch" class="search" placeholder="Поиск по урокам и темам…" aria-label="Поиск"></div>
 <div class="modules-grid" id="courseGrid">{% for mod in modules %}
-<section class="module-card" data-search="{{ (mod.title ~ ' ' ~ mod.description ~ ' ' ~ (mod.lessons|map(attribute='title')|join(' ')))|lower }}"><div class="module-top"><span class="module-num">MODULE {{ '%02d'|format(loop.index) }}</span><span class="module-counter">{{ mod.lessons|length }} УРОКОВ</span></div>
-<h3>{{ mod.title }}</h3><p>{{ mod.description }}</p><div class="lesson-links">{% for item in mod.lessons %}<a href="/lesson/{{ item.id }}" class="lesson-link"><span class="tiny-dot {% if ('lesson',item.id) in done %}checked{% endif %}"></span>{{ item.title }}<span class="arrow">↗</span></a>{% endfor %}</div>
+{% set state = module_progress[mod.id] %}
+<section class="module-card {% if not state.unlocked %}module-locked{% endif %}" data-search="{{ (mod.title ~ ' ' ~ mod.description ~ ' ' ~ (mod.lessons|map(attribute='title')|join(' ')))|lower }}">
+<div class="module-top"><span class="module-num">РАЗДЕЛ {{ '%02d'|format(loop.index) }}</span>
+<span class="module-counter">{% if state.completed %}✓ ЗАВЕРШЁН{% elif not state.unlocked %}🔒 ЗАКРЫТ{% else %}{{ state.done_count }} / {{ state.total }} УРОКОВ{% endif %}</span></div>
+<h3>{{ mod.title }}</h3><p>{{ mod.description }}</p>
+{% if state.unlocked %}
+<div class="progress module-progress"><span style="width:{{ (state.done_count / state.total * 100)|round if state.total else 0 }}%"></span></div>
+<div class="lesson-links">{% for item in mod.lessons %}
+{% if item.id in unlocked_lessons %}
+<a href="/lesson/{{ item.id }}" class="lesson-link">
+<span class="tiny-dot {% if ('lesson',item.id) in done %}checked{% endif %}"></span>{{ item.title }}<span class="arrow">{% if ('lesson',item.id) in done %}✓{% else %}→{% endif %}</span></a>
+{% else %}
+<div class="lesson-link lesson-link-locked"><span class="tiny-dot"></span><span>🔒 {{ item.title }}</span><span class="arrow">Закрыт</span></div>
+{% endif %}
+{% endfor %}</div>
+{% else %}
+<div class="module-gate">🔒 Завершите предыдущий раздел, чтобы открыть материалы и задания.</div>
+{% endif %}
 </section>{% endfor %}</div>
 <div class="foot-note">Для практики открой урок и выбери задание. Либо перейди в <a href="/lab">свободную лабораторию</a> для экспериментов с Linux.</div>
 {% endblock %}
