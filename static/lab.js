@@ -22,7 +22,7 @@ async function connectTerminal(){
   target.replaceChildren();
   const d=dimensions();
   term=new Terminal({cols:d.cols,rows:d.rows,cursorBlink:true,convertEol:false,scrollback:1500,
-    fontFamily:'Consolas,Monaco,monospace',fontSize:14,theme:{background:'#061219',foreground:'#d6e9ed',cursor:'#64ddbe'}});
+    fontFamily:'Consolas,Monaco,monospace',fontSize:14,theme:{background:'#0d1117',foreground:'#c9d1d9',cursor:'#58a6ff'}});
   term.open(target);term.focus();
   const scheme=location.protocol==='https:'?'wss':'ws';
   socket=new WebSocket(`${scheme}://${location.host}/ws/${distro}`);socket.binaryType='arraybuffer';
