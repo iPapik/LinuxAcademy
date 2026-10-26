@@ -131,3 +131,37 @@ def test_foundation_progression_and_persistent_badges(monkeypatch):
         again=achievements.snapshot(guest)
         assert again['earned']==first['earned']
         assert again['xp']==first['xp']
+
+
+def test_guest_to_registered_profile_survives_restart_and_logout(monkeypatch):
+    from app import main as app_main, achievements
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as browser:
+        assert browser.get('/', follow_redirects=False).status_code == 303
+        visitor=storage.get_session(browser.cookies.get('lab_session'))
+        assert visitor['is_guest']
+        assert browser.get('/dashboard').status_code == 200
+        assert browser.get('/profile').status_code == 200
+        assert browser.get('/register').status_code == 200
+        storage.complete(visitor['id'], 'read', 'm00-l01')
+        form={'csrf':visitor['csrf'], 'username':'academytester',
+              'password':'ThisIsATestOnly12345', 'confirm':'ThisIsATestOnly12345'}
+        response=browser.post('/register',data=form,follow_redirects=False)
+        assert response.status_code == 303
+        registered=storage.get_session(browser.cookies.get('lab_session'))
+        assert registered['id'] == visitor['id']
+        assert not registered['is_guest']
+        assert registered['username'] == 'academytester'
+        assert ('read','m00-l01') in storage.completed(registered['id'])
+        assert browser.get('/profile').status_code == 200
+        assert browser.get('/dashboard').status_code == 200
+        earned=achievements.snapshot(registered)
+        assert any(b['id']=='registered' and b['earned'] for b in earned['badges'])
+        assert browser.post('/logout',headers={'X-CSRF-Token':registered['csrf']}).json()['ok']
+    with TestClient(app) as second:
+        login=second.post('/login',data={'username':'academytester',
+                    'password':'ThisIsATestOnly12345'},follow_redirects=False)
+        assert login.status_code==303
+        again=storage.get_session(second.cookies.get('lab_session'))
+        assert again['id']==visitor['id']
+        assert second.get('/profile').status_code==200
