@@ -110,6 +110,12 @@ if [[ ! -e /etc/linuxacademy/tls/server.crt ]]; then
  chmod 600 /etc/linuxacademy/tls/server.key
 fi
 cat >/etc/nginx/sites-available/linuxacademy <<'NGINX'
+# Secure cookies only work on HTTPS. Redirect direct http://IP traffic.
+server {
+    listen 80 default_server;
+    server_name _;
+    return 308 https://$host$request_uri;
+}
 server {
     listen 443 ssl;
     server_name _;
