@@ -17,6 +17,20 @@ const menu=document.getElementById('menuToggle');
 if(menu)menu.onclick=()=>document.getElementById('sidebar')?.classList.toggle('open');
 const logout=document.getElementById('logoutBtn');
 if(logout)logout.onclick=async()=>{try{await api('/logout');location.href='/login';}catch(err){toast(err.message,true)}};
+const markRead=document.getElementById('markRead');
+if(markRead)markRead.onclick=async()=>{
+  markRead.disabled=true;
+  try{
+    await api('/api/lesson/'+markRead.dataset.lesson+'/read');
+    document.getElementById('readCta').hidden=true;
+    const quiz=document.getElementById('quiz');
+    if(quiz){quiz.hidden=false;quiz.scrollIntoView({behavior:'smooth',block:'start'});}
+    document.getElementById('stepRead')?.classList.add('complete');
+    document.getElementById('stepQuiz')?.classList.add('current');
+    toast('Теория пройдена. Теперь проверьте знания.');
+  }catch(err){toast(err.message,true);markRead.disabled=false;}
+};
+
 const search=document.getElementById('courseSearch');
 if(search)search.oninput=()=>{const query=search.value.trim().toLowerCase();document.querySelectorAll('.module-card').forEach(card=>card.hidden=!card.dataset.search.includes(query))};
 
@@ -49,6 +63,11 @@ if(submitQuiz){
   try{const res=await api('/api/quiz/'+submitQuiz.dataset.lesson,{answers});
     for(const item of res.checks){const feedback=document.querySelector(`[data-q-feedback="${item.id}"]`);feedback.className='q-feedback '+(item.passed?'':'fail');feedback.textContent=(item.passed?'✓ Правильно. ':'× Неверно. ')+item.explanation}
     const result=document.getElementById('quizResult');result.className='quiz-result '+(res.passed?'':'fail');result.textContent=`Результат: ${res.score} из ${res.total}. ${res.passed?'Тест сдан.':'Для зачёта необходимо набрать не менее 70%. Можно повторить.'}`;
+    if(res.passed){
+      const labs=document.getElementById('tasks');
+      if(labs){labs.hidden=false;document.getElementById('stepQuiz')?.classList.add('complete');document.getElementById('stepPractice')?.classList.add('current');}
+      if(labs)labs.scrollIntoView({behavior:'smooth',block:'start'});
+    }
     toast(res.passed?'Тест пройден!':'Тест не сдан. Повторите материал.',!res.passed);
   }catch(err){toast(err.message,true)}finally{submitQuiz.disabled=false}
  };
