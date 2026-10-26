@@ -213,3 +213,75 @@ def test_existing_database_receives_achievements_table(tmp_path,monkeypatch):
     with storage.connect() as conn:
         assert conn.execute("SELECT username FROM users WHERE username='previousstudent'").fetchone()[0]=='previousstudent'
         assert conn.execute("SELECT name FROM sqlite_master WHERE name='achievements'").fetchone()[0]=='achievements'
+
+
+def test_strict_course_order_ui_and_server_prevent_link_bypass(monkeypatch):
+    from app import main as app_main, learning_path
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as c:
+        c.get('/')
+        user=storage.get_session(c.cookies.get('lab_session'))
+        csrf={'X-CSRF-Token':user['csrf']}
+        assert c.get('/lesson/m00-l01').status_code==200
+        assert c.get('/lesson/m00-l02').status_code==403
+        assert 'Урок пока закрыт' in c.get('/lesson/m00-l02').text
+        assert c.get('/lesson/m01-l01').status_code==403
+        assert c.get('/lesson/m13-l01').status_code==403
+        home=c.get('/dashboard')
+        assert home.status_code==200
+        assert 'module-locked' in home.text
+        assert 'href="/lesson/m00-l02"' not in home.text
+        assert 'href="/lesson/m01-l01"' not in home.text
+        assert c.post('/api/lesson/m00-l02/read',headers=csrf).status_code==403
+        assert c.post('/api/quiz/m00-l02',headers=csrf,json={'answers':{}}).status_code==403
+        assert c.post('/api/task/m00-l02-p1/prepare',headers=csrf).status_code==403
+        assert c.post('/api/task/m00-l02-p1/verify',headers=csrf).status_code==403
+        assert c.post('/api/lesson/m00-l01/read',headers=csrf).status_code==200
+        assert c.get('/lesson/m00-l02').status_code==403
+        q=LESSONS['m00-l01']['quiz']
+        answers={question['id']:question['answer'] for question in q}
+        result=c.post('/api/quiz/m00-l01',headers=csrf,json={'answers':answers}).json()
+        assert result['passed']
+        assert not result['lesson_completed']
+        assert c.get('/lesson/m00-l02').status_code==403
+        monkeypatch.setattr(labs,'ensure_lab',lambda uid,distro:'test-lab')
+        monkeypatch.setattr(labs,'check_task',lambda name,task:[{'ok':True,'description':'verified'}])
+        result=c.post('/api/task/m00-l01-p1/verify',headers=csrf).json()
+        assert result['passed'] and result['lesson_completed']
+        assert c.get('/lesson/m00-l02').status_code==200
+        assert c.get('/lesson/m00-l03').status_code==403
+        assert c.get('/lesson/m00-l01').status_code==200
+        home=c.get('/dashboard').text
+        assert 'href="/lesson/m00-l02"' in home
+        assert 'href="/lesson/m00-l03"' not in home
+        assert learning_path.next_lesson(storage.completed(user['id']))=='m00-l02'
+
+
+def test_finished_legacy_lesson_is_still_accessible_with_previous_gap(monkeypatch):
+    from app import main as app_main, learning_path
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as c:
+        c.get('/')
+        user=storage.get_session(c.cookies.get('lab_session'))
+        storage.complete(user['id'],'lesson','m13-l01')
+        assert c.get('/lesson/m13-l01').status_code==200
+        assert c.get('/lesson/m13-l02').status_code==403
+        assert c.get('/lesson/m00-l01').status_code==200
+        assert c.get('/lesson/m00-l02').status_code==403
+        assert learning_path.next_lesson(storage.completed(user['id']))=='m00-l01'
+
+
+def test_entire_chapter_unlocks_next_chapter_only_when_complete(monkeypatch):
+    from app import main as app_main, learning_path
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as c:
+        c.get('/')
+        user=storage.get_session(c.cookies.get('lab_session'))
+        first_module=learning_path.MODULES[0]
+        next_module=learning_path.MODULES[1]
+        for lesson in first_module['lessons'][:-1]:
+            storage.complete(user['id'],'lesson',lesson['id'])
+        assert c.get('/lesson/'+next_module['lessons'][0]['id']).status_code==403
+        storage.complete(user['id'],'lesson',first_module['lessons'][-1]['id'])
+        assert c.get('/lesson/'+next_module['lessons'][0]['id']).status_code==200
+        assert learning_path.module_state(storage.completed(user['id']))[next_module['id']]['unlocked']
