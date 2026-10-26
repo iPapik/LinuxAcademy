@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация{% endblock %}{% block crumb %}РЕГИСТРАЦИЯ{% endblock %}
+{% block body %}
+<div class="auth-wrap"><div class="eyebrow">LINUXACADEMY / ЛИЧНЫЙ КАБИНЕТ</div>
+<h1>Сохраните свой <em>прогресс.</em></h1><p class="lede">Создайте учётную запись. Уже пройденные тесты, задания и лаборатории останутся в вашем профиле.</p>
+<div class="auth-card">
+<h2>Регистрация ученика</h2>
+{% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+<form method="post" action="/register">
+<input type="hidden" name="csrf" value="{{ user.csrf }}">
+<label>Логин (латиница, 3–32 символа)<input name="username" type="text" minlength="3" maxlength="32" pattern="[a-z][a-z0-9._-]{2,31}" autocomplete="username" required autofocus></label>
+<label>Пароль (не менее 12 символов)<input name="password" type="password" minlength="12" maxlength="256" autocomplete="new-password" required></label>
+<label>Повторите пароль<input name="confirm" type="password" minlength="12" maxlength="256" autocomplete="new-password" required></label>
+<button class="btn primary full" type="submit">Зарегистрироваться →</button>
+</form>
+<p class="muted">Уже зарегистрированы? <a href="/login">Войти в аккаунт</a>. Можно также <a href="/dashboard">продолжить без регистрации</a>.</p>
+</div></div>
+{% endblock %}
