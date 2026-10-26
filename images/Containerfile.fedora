@@ -1,0 +1,5 @@
+FROM docker.io/library/fedora:43
+RUN dnf install -y bash findutils gawk grep sed procps-ng iproute iputils curl-minimal nano vim-minimal git rsync acl file less sudo shadow-utils tar gzip unzip python3 openssh-clients diffutils && dnf clean all
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]
