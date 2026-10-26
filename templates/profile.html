@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Мои достижения{% endblock %}{% block crumb %}ПРОФИЛЬ{% endblock %}
+{% block body %}
+<div class="eyebrow">ВАШ ПУТЬ В LINUX</div>
+<div class="profile-head"><div><h1>Мои <em>достижения.</em></h1><p class="lede">Учебный профиль: <strong>{{ 'Гость' if user.is_guest else user.username }}</strong>. Награды выдаются только за подтверждённые тесты и задания.</p>
+{% if user.is_guest %}<a class="btn primary" href="/register">Зарегистрироваться и сохранить прогресс</a>{% endif %}
+</div><div class="level-card"><span>УРОВЕНЬ</span><strong>{{ awards.level }}</strong><small>{{ awards.xp }} XP</small></div></div>
+<div class="stats-grid profile-stats">
+<div class="stat-tile"><div class="stat-caption">ОТКРЫТО НАГРАД</div><strong>{{ awards.earned }} <small>/ {{ awards.total }}</small></strong></div>
+<div class="stat-tile"><div class="stat-caption">ЗАВЕРШЕНО УРОКОВ</div><strong>{{ awards.lessons }}</strong></div>
+<div class="stat-tile"><div class="stat-caption">СДАНО ТЕСТОВ</div><strong>{{ awards.quizzes }}</strong></div>
+<div class="stat-tile"><div class="stat-caption">ВЫПОЛНЕНО ЗАДАНИЙ</div><strong>{{ awards.tasks }}</strong></div>
+</div>
+<div class="section-head"><div><div class="eyebrow">ПРОГРЕСС И МОТИВАЦИЯ</div><h2>Коллекция достижений</h2></div></div>
+<div class="achievement-grid">
+{% for b in awards.badges %}
+<div class="achievement-card {% if b.earned %}unlocked{% else %}locked{% endif %}">
+<div class="achievement-icon">{{ b.icon }}</div><div><div class="achievement-state">{{ '✓ Получено' if b.earned else '◷ Ещё не получено' }}</div><h3>{{ b.title }}</h3><p>{{ b.description }}</p></div>
+</div>
+{% endfor %}
+</div>
+<div class="info-box" style="margin-top:26px">XP начисляются за уникальные действия: чтение урока — 5, тест — 20, проверенная практика — 30, полностью пройденный урок — 50. Повторный зачёт не создаёт дополнительные очки. Для гостевых профилей прогресс привязан к cookie браузера. Зарегистрируйте аккаунт, чтобы входить с другого устройства.</div>
+{% endblock %}
