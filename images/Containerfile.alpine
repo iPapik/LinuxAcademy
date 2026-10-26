@@ -1,0 +1,5 @@
+FROM docker.io/library/alpine:3.24
+RUN apk add --no-cache bash coreutils findutils gawk grep sed procps iproute2 iputils curl nano vim git rsync acl file less sudo shadow tar gzip unzip python3 openssh-client diffutils
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]
