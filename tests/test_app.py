@@ -110,3 +110,24 @@ def test_passwordless_guest_mode_keeps_separate_progress_and_blocks_admin(monkey
         assert ('quiz','m02-l01') not in storage.completed(two['id'])
         assert first.post('/logout',headers={'X-CSRF-Token':one['csrf']}).status_code==403
         assert first.get('/').status_code==200
+
+
+def test_foundation_progression_and_persistent_badges(monkeypatch):
+    from app import main as app_main, achievements
+    monkeypatch.setattr(app_main, 'GUEST_MODE', True)
+    with TestClient(app) as c:
+        c.get('/')
+        guest=storage.get_session(c.cookies.get('lab_session'))
+        csrf={'X-CSRF-Token':guest['csrf']}
+        assert c.post('/api/quiz/m00-l01',headers=csrf,json={'answers':{}}).status_code==403
+        assert c.post('/api/task/m00-l01-p1/prepare',headers=csrf).status_code==403
+        assert c.post('/api/lesson/m00-l01/read',headers=csrf).json()['ok']
+        assert c.get('/lesson/m00-l01').status_code==200
+        q=LESSONS['m00-l01']['quiz']
+        assert c.post('/api/quiz/m00-l01',headers=csrf,
+            json={'answers':{item['id']:item['answer'] for item in q}}).json()['passed']
+        first=achievements.snapshot(guest)
+        assert any(b['id']=='first_quiz' and b['earned'] for b in first['badges'])
+        again=achievements.snapshot(guest)
+        assert again['earned']==first['earned']
+        assert again['xp']==first['xp']
