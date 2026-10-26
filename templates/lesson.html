@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ lesson.title }}{% endblock %}{% block crumb %}УРОК / {{ lesson.id|upper }}{% endblock %}
+{% block body %}
+<a class="back-link" href="/dashboard">← Все разделы</a>
+<div class="lesson-header"><div class="eyebrow">{{ lesson.id|upper }} &nbsp; · &nbsp; {{ lesson.level }} &nbsp; · &nbsp; {{ lesson.tasks|length }} ПРАКТИКУМОВ</div><h1>{{ lesson.title }}</h1>
+<div class="lesson-badges">{% if ('lesson',lesson.id) in done %}<span class="status-chip done">✓ Урок завершён</span>{% else %}<span class="status-chip">● В процессе изучения</span>{% endif %}{% if lesson.vm %}<span class="status-chip dim">Для полного практикума нужна ВМ</span>{% endif %}</div></div>
+<div class="lesson-layout"><div class="lesson-main">
+<section class="content-panel prose">{{ lesson.content|md|safe }}</section>
+<section class="tasks-section" id="tasks"><div class="section-head"><div><div class="eyebrow">ПРАКТИЧЕСКОЕ ЗАКРЕПЛЕНИЕ</div><h2>Лабораторные задания</h2></div></div>
+{% if not lesson.tasks %}<div class="info-box">В этой теме практикум требует полноценной виртуальной машины. Изучите теорию и пройдите тест. Для команд терминала используйте отдельную учебную VM.</div>{% endif %}
+{% for item in lesson.tasks %}<div class="task-card" id="{{ item.id }}"><div class="task-header"><div><span class="label-index">ЗАДАНИЕ {{ '%02d'|format(loop.index) }}</span><h3>{{ item.title }}</h3></div>
+<span class="status-chip {% if ('task',item.id) in done %}done{% endif %}" data-task-status="{{ item.id }}">{% if ('task',item.id) in done %}✓ Пройдено{% else %}Не проверено{% endif %}</span></div>
+<div class="task-description">{{ item.description|md|safe }}</div><div class="task-meta">Среда: <strong>{{ {'ubuntu':'Ubuntu 24.04','debian':'Debian 13','alma':'AlmaLinux 9'}[item.distro] }}</strong></div>
+<div class="task-actions"><button class="btn secondary" data-prepare="{{ item.id }}">Подготовить задание</button><a class="btn outline" href="/lab?distro={{ item.distro }}" target="_blank" rel="noopener">Открыть терминал ↗</a><button class="btn primary" data-verify="{{ item.id }}">Проверить результат</button></div>
+{% if item.hint %}<details class="hint"><summary>Подсказка</summary><p>{{ item.hint }}</p></details>{% endif %}
+<div class="check-results" id="result-{{ item.id }}" aria-live="polite"></div></div>{% endfor %}</section>
+<section class="quiz-section" id="quiz"><div class="eyebrow">ПРОВЕРКА ЗНАНИЙ / МИНИМУМ 70%</div><h2>Контрольный тест</h2><p class="muted">Ответьте на вопросы и получите разбор каждого ответа. Тест можно перепроходить.</p>
+<div id="quizQuestions">{% for q in lesson.quiz %}<div class="question"><div class="question-num">ВОПРОС {{ '%02d'|format(loop.index) }}</div><h3>{{ q.question }}</h3><div class="answers">{% for opt in q.options %}<label class="answer"><input type="radio" name="{{ q.id }}" value="{{ loop.index0 }}"><span class="answer-letter">{{ ['A','B','C','D'][loop.index0] }}</span><span>{{ opt }}</span></label>{% endfor %}</div><div class="q-feedback" data-q-feedback="{{ q.id }}"></div></div>{% endfor %}</div>
+<button class="btn primary" id="submitQuiz" data-lesson="{{ lesson.id }}">Завершить тест →</button><div id="quizResult" aria-live="polite"></div>
+</section>
+<div class="lesson-next">{% if previous %}<a class="btn outline" href="/lesson/{{ previous }}">← Предыдущий урок</a>{% endif %}<span></span>{% if following %}<a class="btn secondary" href="/lesson/{{ following }}">Следующий урок →</a>{% else %}<a class="btn secondary" href="/dashboard">Вернуться к программе →</a>{% endif %}</div></div>
+<aside class="lesson-side"><div class="sticky-panel"><div class="eyebrow">НАВИГАЦИЯ ПО УРОКУ</div><a href="#tasks">▣ &nbsp; Практические задания</a><a href="#quiz">◇ &nbsp; Контрольный тест</a><a href="/lab" target="_blank">⌘ &nbsp; Свободная лаборатория ↗</a><div class="tiny-hint">Проверка осуществляется на сервере внутри вашего учебного окружения. Работы остальных пользователей не затрагиваются.</div></div></aside></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Справочник администратора{% endblock %}
+{% block crumb %}СПРАВОЧНИК / РУКОВОДСТВО{% endblock %}
+{% block body %}
+<a class="back-link" href="/dashboard">← Панель обучения</a>
+<div class="eyebrow">LINUX / ОФЛАЙН-РУКОВОДСТВО</div>
+<h1>Справочник <em>администратора.</em></h1>
+<p class="lede">Развёрнутые инструкции по установке, эксплуатации, безопасности и автоматизации Linux. Все материалы размещены на вашем сервере.</p>
+<section class="reference-panel prose">{{ reference|md|safe }}</section>
+{% endblock %}

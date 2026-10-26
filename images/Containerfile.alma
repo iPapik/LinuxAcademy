@@ -1,0 +1,9 @@
+FROM quay.io/almalinuxorg/almalinux:9
+RUN dnf install -y \
+  bash coreutils findutils gawk grep sed procps-ng iproute iputils \
+  curl-minimal nano vim-minimal git rsync acl file less sudo shadow-utils \
+  util-linux tar gzip unzip python3 openssh-clients which diffutils \
+  && dnf clean all
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]

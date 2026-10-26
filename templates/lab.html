@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Лаборатория{% endblock %}{% block crumb %}БРАУЗЕРНЫЙ ТЕРМИНАЛ{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/vendor/xterm.css">{% endblock %}
+{% block body %}
+<div class="eyebrow">PRACTICE / ISOLATED ENVIRONMENT</div><div class="section-head lab-heading"><div><h1>Linux <em>Lab.</em></h1><p class="lede">Настоящая интерактивная shell-сессия в отдельном контейнере. Все команды выполняются на тестовом окружении, не на сервере предприятия.</p></div><div class="lab-status" id="labStatus"><span class="online-dot"></span> Не подключено</div></div>
+<div class="os-grid">{% for key,info in distros.items() %}<a href="/lab?distro={{ key }}" class="os-tile {% if key == distro %}selected{% endif %}"><span class="os-icon">{% if key=='ubuntu' %}◉{% elif key=='debian' %}◈{% else %}⬡{% endif %}</span><span><strong>{{ info.name }}</strong><small>ROOTLESS PODMAN · CLI</small></span><span class="os-radio">{% if key==distro %}●{% else %}○{% endif %}</span></a>{% endfor %}</div>
+<div class="terminal-shell" data-distro="{{ distro }}" id="terminalShell"><div class="term-toolbar"><div class="terminal-lights"><i></i><i></i><i></i></div><div class="term-title">{{ distros[distro].name }} — /workspace</div><div class="term-actions"><button id="reconnect" class="term-button">↻ Подключиться</button><button id="resetLab" class="term-button danger">⌫ Сброс</button></div></div>
+<div id="terminal" class="terminal-content" aria-label="Интерактивный терминал"><div class="terminal-placeholder">Подключение к изолированной Linux-сессии…</div></div></div>
+<div class="lab-bottom"><div class="info-box"><strong>Изоляция</strong><p>Для каждого пользователя создаётся собственный контейнер. Сеть отключена, доступ к устройствам и хостовым каталогам не предоставляется, CPU и RAM ограничены.</p></div><div class="info-box"><strong>Важное ограничение</strong><p>Это Linux-контейнеры, не полноценные виртуальные машины. Настройка BIOS/GRUB, собственного ядра, systemd и боевых сетевых сервисов требует отдельной ВМ.</p></div></div>
+<div class="foot-note">Команда <code>exit</code> завершит текущую shell-сессию, но данные лаборатории сохранятся до сброса. Сброс удаляет все изменения выбранного окружения без возможности восстановления.</div>
+{% endblock %}
+{% block scripts %}<script src="/static/vendor/xterm.js"></script><script src="/static/lab.js" defer></script>{% endblock %}

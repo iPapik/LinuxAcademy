@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Вход{% endblock %}
+{% block crumb %}АВТОРИЗАЦИЯ{% endblock %}
+{% block body %}
+<div class="login-layout"><div class="login-intro"><div class="eyebrow">INTERNAL LEARNING PLATFORM / 01</div>
+<h1>Linux начинается<br>с <em>практики.</em></h1><p>От первой команды до диагностики инфраструктуры. Теория, реальные командные оболочки и проверяемые задания — в одном месте.</p>
+<div class="login-stats"><div><strong>{{ counts.modules }}</strong><span>разделов</span></div><div><strong>{{ counts.lessons }}</strong><span>уроков</span></div><div><strong>{{ counts.tasks }}</strong><span>лабораторных</span></div></div>
+<div class="terminal-preview"><div class="terminal-lights"><i></i><i></i><i></i></div><pre><span class="t-teal">student@academy</span>:<span class="t-blue">~</span>$ whoami
+linux-engineer
+<span class="t-teal">student@academy</span>:<span class="t-blue">~</span>$ echo 'Ready to learn'
+Ready to learn
+<span class="t-teal">student@academy</span>:<span class="t-blue">~</span>$ <span class="cursor-block">█</span></pre></div></div>
+<section class="login-box"><div class="eyebrow">ДОСТУП К ОБУЧЕНИЮ</div><h2>С возвращением</h2><p>Войдите в корпоративную учётную запись платформы.</p>
+{% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+<form method="post" action="/login"><label>Логин<input name="username" type="text" autocomplete="username" placeholder="username" required autofocus></label>
+<label>Пароль<input name="password" type="password" autocomplete="current-password" placeholder="••••••••••••" required></label>
+<button class="btn primary full" type="submit">Войти в платформу <span>→</span></button></form>
+<div class="secure-text">◈ Доступ только для зарегистрированных сотрудников</div>
+</section></div>
+{% endblock %}

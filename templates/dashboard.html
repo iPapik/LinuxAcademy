@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Главная{% endblock %}{% block crumb %}ПАНЕЛЬ ОБУЧЕНИЯ{% endblock %}
+{% block body %}
+<div class="eyebrow">ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА / LINUX</div><div class="hero-row"><div><h1>Твоя дорога<br>в <em>Linux.</em></h1><p class="lede">Изучай систему изнутри, выполняй команды и проходи реальные проверки. Все результаты сохраняются.</p></div>
+<div class="hero-symbol">$_</div></div>
+<div class="stats-grid"><div class="stat-tile"><div class="stat-caption">ПРОГРЕСС</div><strong>{{ learned }} <small>/ {{ total }}</small></strong><div class="progress"><span style="width: {{ (learned / total * 100)|round if total else 0 }}%"></span></div><div class="minor">пройдено уроков</div></div>
+<div class="stat-tile"><div class="stat-caption">УЧЕБНАЯ ПРОГРАММА</div><strong>{{ counts.lessons }}</strong><div class="minor">структурированных уроков</div></div>
+<div class="stat-tile"><div class="stat-caption">ЛАБОРАТОРИИ</div><strong>{{ counts.tasks }}</strong><div class="minor">проверяемых заданий</div></div>
+<div class="stat-tile"><div class="stat-caption">ТЕСТИРОВАНИЕ</div><strong>{{ counts.questions }}</strong><div class="minor">вопросов с разбором</div></div></div>
+<div class="section-head"><div><div class="eyebrow">УЧЕБНЫЕ ТРЕКИ</div><h2>Программа обучения</h2></div><input type="search" id="courseSearch" class="search" placeholder="Поиск по урокам и темам…" aria-label="Поиск"></div>
+<div class="modules-grid" id="courseGrid">{% for mod in modules %}
+<section class="module-card" data-search="{{ (mod.title ~ ' ' ~ mod.description ~ ' ' ~ (mod.lessons|map(attribute='title')|join(' ')))|lower }}"><div class="module-top"><span class="module-num">MODULE {{ '%02d'|format(loop.index) }}</span><span class="module-counter">{{ mod.lessons|length }} УРОКОВ</span></div>
+<h3>{{ mod.title }}</h3><p>{{ mod.description }}</p><div class="lesson-links">{% for item in mod.lessons %}<a href="/lesson/{{ item.id }}" class="lesson-link"><span class="tiny-dot {% if ('lesson',item.id) in done %}checked{% endif %}"></span>{{ item.title }}<span class="arrow">↗</span></a>{% endfor %}</div>
+</section>{% endfor %}</div>
+<div class="foot-note">Для практики открой урок и выбери задание. Либо перейди в <a href="/lab">свободную лабораторию</a> для экспериментов с Linux.</div>
+{% endblock %}

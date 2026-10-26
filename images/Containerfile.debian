@@ -1,0 +1,10 @@
+FROM docker.io/library/debian:13
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  bash coreutils findutils gawk grep sed procps iproute2 iputils-ping \
+  curl nano vim-tiny git rsync acl file less sudo passwd util-linux \
+  tar gzip unzip ca-certificates python3 openssh-client diffutils \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /workspace && chmod 1777 /workspace
+WORKDIR /workspace
+CMD ["sleep","infinity"]

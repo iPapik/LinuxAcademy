@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf" content="{{ user.csrf if user else '' }}">
+<title>{% block title %}LinuxAcademy{% endblock %} · LinuxAcademy</title>
+<link rel="stylesheet" href="/static/style.css">
+{% block head %}{% endblock %}
+</head><body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+<a class="brand" href="/dashboard"><span class="brand-icon">&gt;_</span><span>Linux<span class="brand-accent">Academy</span><small>ENTERPRISE TRAINING</small></span></a>
+{% if user %}
+<div class="sidebar-section">ОБЗОР</div>
+<a class="nav-item" href="/dashboard"><span class="nav-glyph">▦</span> Панель обучения</a>
+<a class="nav-item" href="/lab"><span class="nav-glyph">⌘</span> Терминал Linux</a>
+<a class="nav-item" href="/reference"><span class="nav-glyph">▤</span> Справочник администратора</a>
+{% if user.is_admin %}<a class="nav-item" href="/admin"><span class="nav-glyph">♙</span> Пользователи</a>{% endif %}
+<div class="sidebar-section">ПРОГРАММА ОБУЧЕНИЯ</div>
+<div class="side-modules">
+{% for mod in modules %}
+<details class="side-details" {% if lesson is defined and lesson.id in (mod.lessons|map(attribute='id')|list) %}open{% endif %}>
+<summary><span class="module-index">{{ '%02d'|format(loop.index) }}</span>{{ mod.title }}</summary>
+{% for item in mod.lessons %}<a class="subnav {% if lesson is defined and lesson.id == item.id %}current{% endif %}" href="/lesson/{{ item.id }}">{{ item.title }}</a>{% endfor %}
+</details>
+{% endfor %}
+</div>
+{% endif %}
+<div class="sidebar-footer"><span class="online-dot"></span> Локальная платформа <span class="version">v1.0</span></div>
+</aside>
+<div class="main-column">
+<header class="topbar"><button class="mobile-menu" id="menuToggle" aria-label="Открыть меню">☰</button>
+<div class="crumb">LINUX / <strong>{% block crumb %}ОБЗОР{% endblock %}</strong></div>
+<div class="top-right">{% if user %}<span class="logged">● {{ user.username }}</span><button id="logoutBtn" class="link-button">Выход</button>{% else %}<span class="logged">Учебный портал</span>{% endif %}</div>
+</header>
+<main class="page">{% block body %}{% endblock %}</main>
+</div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/static/site.js" defer></script>
+{% block scripts %}{% endblock %}
+</body></html>
