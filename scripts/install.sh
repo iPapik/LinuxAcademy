@@ -29,7 +29,11 @@ if ! grep -q "^${SERVICE}:" /etc/subgid; then usermod --add-subgids 200000-26553
 loginctl enable-linger "$SERVICE"
 systemctl start "user@${UID_LAB}.service" || true
 install -d -m 750 -o "$SERVICE" -g "$SERVICE" "$HOME_DIR/data"
-echo '[2/8] Копирование приложения (данные пользователей не удаляются)'
+echo '[2/8] Резервная копия БД и обновление приложения'
+if [[ -f "$HOME_DIR/data/academy.sqlite3" ]]; then
+  echo '      Обнаружена существующая БД — сохраняем резервную копию.'
+  bash "$SOURCE/scripts/backup.sh"
+fi
 mkdir -p "$INSTALL"
 rsync -a --delete --exclude '.venv/' --exclude 'data/' --exclude '.git/' \
   "$SOURCE/" "$INSTALL/"
