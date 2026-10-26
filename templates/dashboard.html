@@ -3,6 +3,8 @@
 {% block body %}
 <div class="eyebrow">ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА / LINUX</div><div class="hero-row"><div><h1>Твоя дорога<br>в <em>Linux.</em></h1><p class="lede">Изучай систему изнутри, выполняй команды и проходи реальные проверки. Все результаты сохраняются.</p></div>
 <div class="hero-symbol">$_</div></div>
+<div class="onboarding-panel"><div><div class="eyebrow">НАЧНИТЕ С ОСНОВ</div><h2>Первые шаги в Linux</h2><p>Разберитесь, что такое файл, каталог и файловая система. Затем проверьте знания и повторите действия в настоящем терминале.</p></div><a class="btn primary" href="/lesson/m00-l01">Начать с нуля →</a></div>
+<div class="onboarding-panel secondary-panel"><div><div class="eyebrow">ВАШ ПРОГРЕСС</div><h2>{{ awards.earned }} из {{ awards.total }} достижений · уровень {{ awards.level }}</h2><p>{{ awards.xp }} XP за прочитанные темы, сданные тесты и задания.</p></div><a class="btn outline" href="/profile">Мои достижения →</a></div>
 <div class="stats-grid"><div class="stat-tile"><div class="stat-caption">ПРОГРЕСС</div><strong>{{ learned }} <small>/ {{ total }}</small></strong><div class="progress"><span style="width: {{ (learned / total * 100)|round if total else 0 }}%"></span></div><div class="minor">пройдено уроков</div></div>
 <div class="stat-tile"><div class="stat-caption">УЧЕБНАЯ ПРОГРАММА</div><strong>{{ counts.lessons }}</strong><div class="minor">структурированных уроков</div></div>
 <div class="stat-tile"><div class="stat-caption">ЛАБОРАТОРИИ</div><strong>{{ counts.tasks }}</strong><div class="minor">проверяемых заданий</div></div>
