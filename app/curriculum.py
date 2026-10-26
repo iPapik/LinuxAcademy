@@ -20,7 +20,7 @@ for part in ('deep_reading_a.json', 'deep_reading_b.json', 'deep_reading_c.json'
 for mod in MODULES:
     for lesson in mod['lessons']:
         if lesson['id'] in DEEP_READING:
-            lesson['content'] = lesson['content'] + '\n\n---\n\n# Подробный учебник\n\n' + DEEP_READING[lesson['id']]
+            lesson['content'] = '# Подробный учебник\n\n' + DEEP_READING[lesson['id']] + '\n\n---\n\n## Краткое повторение и команды\n\n' + lesson['content']
 LESSONS = {l['id']:l for m in MODULES for l in m['lessons']}
 TASKS = {t['id']: dict(t, lesson_id=l['id']) for l in LESSONS.values() for t in l.get('tasks',[])}
 
