@@ -75,3 +75,38 @@ def test_lab_names_not_controlled_by_untrusted_input():
         try:labs.name_for(12,invalid)
         except ValueError:pass
         else:assert False
+
+
+def test_passwordless_guest_mode_keeps_separate_progress_and_blocks_admin(monkeypatch):
+    # Enabled by the on-prem installer, unlike the optional legacy auth mode.
+    from app import main as app_main
+    monkeypatch.setattr(app_main,'GUEST_MODE',True)
+    app_main.GUEST_EVENTS.clear()
+    with TestClient(app) as first, TestClient(app) as second:
+        r=first.get('/',follow_redirects=False)
+        assert r.status_code==303
+        assert r.headers['location']=='/dashboard'
+        one=storage.get_session(first.cookies.get('lab_session'))
+        assert one and not one['is_admin'] and one['username'].startswith('guest-')
+        assert first.get('/dashboard').status_code==200
+        assert first.get('/lesson/m02-l01').status_code==200
+        assert first.get('/reference').status_code==200
+        assert first.get('/lab').status_code==200
+        assert first.get('/admin').status_code==403
+        assert first.get('/login',follow_redirects=False).headers['location']=='/'
+        assert first.post('/login',data={'username':'mainadmin','password':'wrong'}).status_code==403
+        assert first.post('/api/admin/users',json={'username':'hacker','password':'PasswordLong12345'}).status_code==403
+        two_r=second.get('/',follow_redirects=False)
+        assert two_r.status_code==303
+        two=storage.get_session(second.cookies.get('lab_session'))
+        assert two['id']!=one['id']
+        assert first.cookies.get('lab_session')!=second.cookies.get('lab_session')
+        quiz=LESSONS['m02-l01']['quiz']
+        result=first.post('/api/quiz/m02-l01',
+            headers={'X-CSRF-Token':one['csrf']},
+            json={'answers':{q['id']:q['answer'] for q in quiz}})
+        assert result.json()['passed']
+        assert ('quiz','m02-l01') in storage.completed(one['id'])
+        assert ('quiz','m02-l01') not in storage.completed(two['id'])
+        assert first.post('/logout',headers={'X-CSRF-Token':one['csrf']}).status_code==403
+        assert first.get('/').status_code==200
